@@ -7,14 +7,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="style.css?v=title-gradient-purple-red-green">
 </head>
 <body>
+    <header class="top-header">
+        <nav class="header-nav" aria-label="Main menu">
+            <a class="header-link" href="https://www.perplexity.ai/computer/a/lake-norman-dashboard-hpEeo1IDQGuNEaWQGlTd8g" target="_blank" rel="noopener noreferrer">Lake Norman Dashboard</a>
+            <a class="header-link" href="https://welday-ent-dashboard.lovable.app/venture/groundbnb/app/3" target="_blank" rel="noopener noreferrer">Welday Enterprises</a>
+        </nav>
+    </header>
     <main class="container">
         <h1 id="main-title">Hello, I’m Hermes</h1>
         <p class="subtitle">Experience the future of retro design.</p>
         <div class="glass-card" id="info-card">
             <p id="joke-display" style="font-size: 1.2rem; min-height: 3em; display: flex; align-items: center; justify-content: center;"></p>
+            <button class="action-btn" id="new-joke-button" type="button">Tell me another joke</button>
         </div>
     </main>
 
@@ -59,13 +66,41 @@
             "A clean desk is a sign of a cluttered desk drawer.",
             "I'm not a slacker, my code is just compiling.",
             "Computers are fast; developers keep them slow.",
-            "I have a joke about a time-traveler, but you didn't like it."
+            "I have a joke about a time-traveler, but you didn't like it.",
+            "Why was the JavaScript developer sad?<br>Because they didn't Node how to Express themselves.",
+            "Why did the function break up with the variable?<br>It found too many unresolved dependencies.",
+            "Why was the computer cold?<br>It left its Windows open.",
+            "Why do Python programmers wear glasses?<br>Because they can't C.",
+            "What's a database administrator's favorite exercise?<br>Table joins.",
+            "Why did the CSS developer go to therapy?<br>Too many unresolved margins.",
+            "Why did the HTML tag feel lonely?<br>It had no body.",
+            "Why did the Git repository get promoted?<br>It had a lot of commits.",
+            "Why did the AI cross the road?<br>It predicted there was a chicken on the other side.",
+            "I told my computer I needed space.<br>It gave me a 1TB external drive.",
+            "Why did the frontend developer panic?<br>The button was centered on the first try.",
+            "Why are programmers bad at hide and seek?<br>Because good luck hiding when everything is in plain text.",
+            "What did the server say after a long day?<br>I need to cache out.",
+            "Why did the regex quit its job?<br>It couldn't handle all the character issues."
         ];
 
         document.addEventListener("DOMContentLoaded", () => {
             const jokeDisplay = document.getElementById("joke-display");
-            const randomIndex = Math.floor(Math.random() * jokes.length);
-            jokeDisplay.innerHTML = jokes[randomIndex];
+            const newJokeButton = document.getElementById("new-joke-button");
+            let lastJokeIndex = -1;
+
+            const showRandomJoke = () => {
+                let randomIndex = Math.floor(Math.random() * jokes.length);
+                if (jokes.length > 1) {
+                    while (randomIndex === lastJokeIndex) {
+                        randomIndex = Math.floor(Math.random() * jokes.length);
+                    }
+                }
+                lastJokeIndex = randomIndex;
+                jokeDisplay.innerHTML = jokes[randomIndex];
+            };
+
+            newJokeButton.addEventListener("click", showRandomJoke);
+            showRandomJoke();
         });
     </script>
 </body>

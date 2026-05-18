@@ -27,6 +27,45 @@ body {
     position: relative;
 }
 
+.top-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 18px 24px;
+    background: rgba(10, 11, 30, 0.62);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(173, 216, 230, 0.18);
+}
+
+.header-nav {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.header-link {
+    color: #add8e6;
+    text-decoration: none;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: color 0.25s ease, text-shadow 0.25s ease;
+}
+
+.header-link:hover,
+.header-link:focus-visible {
+    color: #d8f6ff;
+    text-shadow: 0 0 14px rgba(173, 216, 230, 0.75);
+    outline: none;
+}
+
 /* Background Animation Elements */
 body::before, body::after {
     content: '';
@@ -66,11 +105,15 @@ h1 {
     font-size: 4rem;
     font-weight: 700;
     margin-bottom: 10px;
-    background: linear-gradient(to right, var(--primary), var(--secondary));
+    background: linear-gradient(90deg, #8a2be2, #ff1744, #00ff7f, #8a2be2);
+    background-size: 300% 300%;
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: transparent;
     letter-spacing: -1px;
-    animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1), titleGradientFlow 4s ease-in-out infinite;
+    text-shadow: 0 0 28px rgba(138, 43, 226, 0.35);
 }
 
 .subtitle {
@@ -128,6 +171,12 @@ h1 {
     100% { transform: scale(1.5) translate(50px, 50px); }
 }
 
+@keyframes titleGradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 @keyframes slideUp {
     from {
         opacity: 0;
@@ -141,6 +190,15 @@ h1 {
 
 /* Responsive */
 @media (max-width: 480px) {
+    .top-header {
+        justify-content: center;
+        padding: 14px 12px;
+    }
+
+    .header-link {
+        font-size: 0.9rem;
+    }
+
     h1 { font-size: 2.5rem; }
     .glass-card { padding: 25px; }
 }
