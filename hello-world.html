@@ -99,7 +99,7 @@
         let boostTarget = 0;
         let boost = 0;
         let tunnelSpeed = 1;
-        let fanAngularVelocity = 3.2;
+        let fanAngularVelocity = 34;
         let fanRpmValue = 650;
         const clock = new THREE.Clock();
 
@@ -362,13 +362,13 @@
             const airflowLoad = Math.max(0, Math.min(1, (tunnelSpeed - 0.92) / 2.5));
             const targetFanRpm = 650 + airflowLoad * 8600;
             fanRpmValue += (targetFanRpm - fanRpmValue) * 0.075;
-            const targetAngularVelocity = (fanRpmValue * Math.PI * 2 / 60) * 0.085;
+            const targetAngularVelocity = 34 + airflowLoad * 240;
 
             modelRoot.rotation.y = Math.sin(elapsed * 0.45) * 0.025;
             modelRoot.rotation.z = Math.sin(elapsed * 0.7) * 0.008;
-            fanAngularVelocity += (targetAngularVelocity - fanAngularVelocity) * 0.12;
+            fanAngularVelocity += (targetAngularVelocity - fanAngularVelocity) * 0.28;
             fanRotor.rotation.z -= dt * fanAngularVelocity;
-            materials.flowMeshBlue.opacity = 0.34 + airflowLoad * 0.34;
+            materials.flowMeshBlue.opacity = 0.42 + airflowLoad * 0.42;
             tunnelRings.children.forEach((ring, i) => { ring.material.opacity = 0.10 + Math.sin(elapsed * 2.4 + i) * 0.035 + boost * 0.08; });
 
             flowLines.forEach((line) => {
