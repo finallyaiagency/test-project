@@ -7,7 +7,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="style.css?v=f1-wind-tunnel-redbull-20260525">
+    <link rel="stylesheet" type="text/css" href="style.css?v=true-3d-f1-wind-tunnel-20260525">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
 </head>
 <body>
     <header class="top-header">
@@ -20,63 +27,27 @@
 
     <main class="wind-page">
         <section class="hero-panel" aria-labelledby="main-title">
-            <div class="eyebrow">Unofficial concept • arcade aero visualization</div>
+            <div class="eyebrow">Three.js prototype • theatrical aero visualization</div>
             <h1 id="main-title">F1 Wind Tunnel</h1>
-            <p class="subtitle">A dramatic, not-scientific Red Bull Racing-inspired tunnel scene with a rotatable 3D car, glowing airflow ribbons, pressure haze, and live-looking telemetry.</p>
+            <p class="subtitle">A true 3D F1-style car built from geometry, with orbit controls and airflow streamlines that split over the nose, around the sidepods, and curl into a wake behind the rear wing.</p>
 
             <div class="control-card" aria-label="Simulation controls">
                 <button class="action-btn" id="boost-button" type="button">Ignite airflow boost</button>
                 <button class="ghost-btn" id="reset-view" type="button">Reset view</button>
-                <p class="small-note">Drag the car display to rotate • scroll or use buttons for speed drama</p>
+                <p class="small-note">Drag to orbit the 3D car • scroll to zoom • airflow is visual, not CFD-accurate</p>
             </div>
         </section>
 
         <section class="sim-shell" aria-label="Interactive F1 wind tunnel simulation">
             <div class="tunnel-status">
                 <span class="status-dot"></span>
-                WIND TUNNEL LIVE
+                WEBGL WIND TUNNEL LIVE
             </div>
 
             <div class="tunnel-stage" id="tunnel-stage">
-                <canvas id="airflow-canvas" aria-hidden="true"></canvas>
-
-                <div class="fan-wall" aria-hidden="true">
-                    <span></span><span></span><span></span>
-                    <div class="fan-core"></div>
-                </div>
-
-                <div class="air-ribbons" aria-hidden="true">
-                    <span></span><span></span><span></span><span></span><span></span><span></span>
-                    <span></span><span></span><span></span><span></span><span></span><span></span>
-                </div>
-
-                <div class="pressure-map" aria-hidden="true"></div>
-
-                <div class="car-rig" id="car-rig" role="img" aria-label="Rotatable 3D Formula 1 car model with navy, red and yellow bull-inspired livery">
-                    <div class="f1-car">
-                        <div class="halo"></div>
-                        <div class="nose"><span></span></div>
-                        <div class="front-wing wing"><span></span><span></span></div>
-                        <div class="rear-wing wing"><span></span><span></span></div>
-                        <div class="monocoque">
-                            <div class="cockpit"></div>
-                            <div class="bull-stripe bull-stripe-one"></div>
-                            <div class="bull-stripe bull-stripe-two"></div>
-                            <div class="engine-cover"></div>
-                        </div>
-                        <div class="sidepod sidepod-left"></div>
-                        <div class="sidepod sidepod-right"></div>
-                        <div class="floor"></div>
-                        <div class="wheel front-left"><span></span></div>
-                        <div class="wheel front-right"><span></span></div>
-                        <div class="wheel rear-left"><span></span></div>
-                        <div class="wheel rear-right"><span></span></div>
-                        <div class="wake wake-one"></div>
-                        <div class="wake wake-two"></div>
-                    </div>
-                </div>
-
-                <div class="floor-grid" aria-hidden="true"></div>
+                <div class="webgl-wrap" id="wind-tunnel-3d" role="img" aria-label="Interactive three dimensional Formula 1 wind tunnel model"></div>
+                <div class="hud-label top-left">flow splits around nose + sidepods</div>
+                <div class="hud-label bottom-right">wake vortices behind rear wing</div>
             </div>
 
             <aside class="telemetry" aria-label="Visual telemetry readout">
@@ -87,156 +58,340 @@
                 </div>
                 <div class="metric">
                     <span>DRAG INDEX</span>
-                    <strong id="drag-index">0.82</strong>
+                    <strong id="drag-index">0.78</strong>
                     <small>visual</small>
                 </div>
                 <div class="metric">
                     <span>DOWNFORCE</span>
-                    <strong id="downforce">1880</strong>
+                    <strong id="downforce">2140</strong>
                     <small>kgf*</small>
                 </div>
                 <div class="metric wide">
                     <span>FLOW STATE</span>
-                    <strong id="flow-state">LAMINAR CHAOS</strong>
-                    <small>*for show, not engineering data</small>
+                    <strong id="flow-state">ATTACHED FLOW</strong>
+                    <small>*stylized, not engineering data</small>
                 </div>
             </aside>
         </section>
     </main>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const stage = document.getElementById("tunnel-stage");
-            const rig = document.getElementById("car-rig");
-            const boostButton = document.getElementById("boost-button");
-            const resetButton = document.getElementById("reset-view");
-            const canvas = document.getElementById("airflow-canvas");
-            const ctx = canvas.getContext("2d");
-            const airSpeed = document.getElementById("air-speed");
-            const dragIndex = document.getElementById("drag-index");
-            const downforce = document.getElementById("downforce");
-            const flowState = document.getElementById("flow-state");
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+        import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
-            let rotationX = -12;
-            let rotationY = -24;
-            let targetBoost = 0;
-            let boost = 0;
-            let isDragging = false;
-            let lastX = 0;
-            let lastY = 0;
-            let particles = [];
+        const container = document.getElementById('wind-tunnel-3d');
+        const stage = document.getElementById('tunnel-stage');
+        const boostButton = document.getElementById('boost-button');
+        const resetButton = document.getElementById('reset-view');
+        const airSpeed = document.getElementById('air-speed');
+        const dragIndex = document.getElementById('drag-index');
+        const downforce = document.getElementById('downforce');
+        const flowState = document.getElementById('flow-state');
 
-            const applyRotation = () => {
-                rig.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
-            };
+        let boostTarget = 0;
+        let boost = 0;
+        let tunnelSpeed = 1;
+        const clock = new THREE.Clock();
 
-            const resizeCanvas = () => {
-                const rect = stage.getBoundingClientRect();
-                const dpr = Math.min(window.devicePixelRatio || 1, 2);
-                canvas.width = rect.width * dpr;
-                canvas.height = rect.height * dpr;
-                canvas.style.width = `${rect.width}px`;
-                canvas.style.height = `${rect.height}px`;
-                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-                particles = Array.from({ length: 120 }, () => ({
-                    x: Math.random() * rect.width,
-                    y: 80 + Math.random() * (rect.height - 150),
-                    z: Math.random(),
-                    speed: 1.2 + Math.random() * 3.5,
-                    hue: Math.random() > 0.72 ? 48 : 205,
-                    width: 40 + Math.random() * 120
-                }));
-            };
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x05091f, 0.055);
 
-            const drawAirflow = () => {
-                const rect = stage.getBoundingClientRect();
-                boost += (targetBoost - boost) * 0.06;
-                ctx.clearRect(0, 0, rect.width, rect.height);
-                ctx.globalCompositeOperation = "lighter";
+        const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 80);
+        camera.position.set(6.3, 3.2, 6.7);
 
-                particles.forEach((p, i) => {
-                    const wave = Math.sin((p.x + i * 13) * 0.018 + Date.now() * 0.003) * (10 + p.z * 24);
-                    const y = p.y + wave;
-                    const alpha = 0.12 + p.z * 0.38 + boost * 0.22;
-                    const gradient = ctx.createLinearGradient(p.x - p.width, y, p.x + p.width, y);
-                    gradient.addColorStop(0, `hsla(${p.hue}, 100%, 65%, 0)`);
-                    gradient.addColorStop(0.45, `hsla(${p.hue}, 100%, 65%, ${alpha})`);
-                    gradient.addColorStop(1, `hsla(${p.hue}, 100%, 65%, 0)`);
-                    ctx.strokeStyle = gradient;
-                    ctx.lineWidth = 1 + p.z * 2.2 + boost * 1.2;
-                    ctx.beginPath();
-                    ctx.moveTo(p.x - p.width, y);
-                    ctx.bezierCurveTo(p.x - p.width * 0.25, y - wave * 0.35, p.x + p.width * 0.25, y + wave * 0.25, p.x + p.width, y);
-                    ctx.stroke();
-                    p.x += p.speed * (2.1 + boost * 4.6);
-                    if (p.x - p.width > rect.width + 80) {
-                        p.x = -p.width - Math.random() * 120;
-                        p.y = 80 + Math.random() * (rect.height - 150);
-                    }
-                });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+        container.appendChild(renderer.domElement);
 
-                const simulatedSpeed = Math.round(247 + boost * 113 + Math.sin(Date.now() / 700) * 5);
-                airSpeed.textContent = simulatedSpeed;
-                dragIndex.textContent = (0.82 - boost * 0.19 + Math.sin(Date.now() / 900) * 0.02).toFixed(2);
-                downforce.textContent = Math.round(1880 + boost * 740 + Math.cos(Date.now() / 800) * 36);
-                flowState.textContent = boost > 0.72 ? "VORTEX PARTY" : boost > 0.32 ? "BOOSTED WAKE" : "LAMINAR CHAOS";
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.minDistance = 4.2;
+        controls.maxDistance = 13;
+        controls.maxPolarAngle = Math.PI * 0.78;
+        controls.target.set(0, 0.15, 0);
 
-                requestAnimationFrame(drawAirflow);
-            };
+        const hemi = new THREE.HemisphereLight(0xbfeeff, 0x07133d, 1.8);
+        scene.add(hemi);
+        const key = new THREE.DirectionalLight(0xffffff, 3.1);
+        key.position.set(-4, 7, 5);
+        scene.add(key);
+        const redLight = new THREE.PointLight(0xff143b, 3.2, 15);
+        redLight.position.set(-4, 2.1, -3.8);
+        scene.add(redLight);
+        const cyanLight = new THREE.PointLight(0x35c8ff, 3.4, 18);
+        cyanLight.position.set(4, 2.8, 3.2);
+        scene.add(cyanLight);
+        const yellowLight = new THREE.PointLight(0xffd42a, 2.2, 12);
+        yellowLight.position.set(0, 3, -4);
+        scene.add(yellowLight);
 
-            stage.addEventListener("pointerdown", (event) => {
-                isDragging = true;
-                stage.setPointerCapture(event.pointerId);
-                lastX = event.clientX;
-                lastY = event.clientY;
-                stage.classList.add("dragging");
+        const materials = {
+            navy: new THREE.MeshStandardMaterial({ color: 0x071b55, metalness: 0.52, roughness: 0.32 }),
+            navyDark: new THREE.MeshStandardMaterial({ color: 0x03071d, metalness: 0.62, roughness: 0.36 }),
+            red: new THREE.MeshStandardMaterial({ color: 0xff143b, metalness: 0.45, roughness: 0.27, emissive: 0x260006 }),
+            yellow: new THREE.MeshStandardMaterial({ color: 0xffd42a, metalness: 0.34, roughness: 0.26, emissive: 0x2c2200 }),
+            carbon: new THREE.MeshStandardMaterial({ color: 0x050505, metalness: 0.78, roughness: 0.42 }),
+            tire: new THREE.MeshStandardMaterial({ color: 0x080808, metalness: 0.15, roughness: 0.82 }),
+            rubberSide: new THREE.MeshStandardMaterial({ color: 0x202020, metalness: 0.1, roughness: 0.9 }),
+            glass: new THREE.MeshPhysicalMaterial({ color: 0x68e8ff, metalness: 0.1, roughness: 0.08, transmission: 0.1, transparent: true, opacity: 0.72 }),
+            flowBlue: new THREE.LineBasicMaterial({ color: 0x35c8ff, transparent: true, opacity: 0.58, blending: THREE.AdditiveBlending }),
+            flowYellow: new THREE.LineBasicMaterial({ color: 0xffd42a, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending }),
+            flowRed: new THREE.LineBasicMaterial({ color: 0xff143b, transparent: true, opacity: 0.36, blending: THREE.AdditiveBlending }),
+            flowMeshBlue: new THREE.MeshBasicMaterial({ color: 0x35c8ff, transparent: true, opacity: 0.48, blending: THREE.AdditiveBlending })
+        };
+
+        function mesh(geometry, material, position, rotation = [0, 0, 0], scale = [1, 1, 1]) {
+            const m = new THREE.Mesh(geometry, material);
+            m.position.set(...position);
+            m.rotation.set(...rotation);
+            m.scale.set(...scale);
+            m.castShadow = true;
+            m.receiveShadow = true;
+            return m;
+        }
+
+        function rodBetween(a, b, radius, mat) {
+            const start = new THREE.Vector3(...a);
+            const end = new THREE.Vector3(...b);
+            const mid = start.clone().lerp(end, 0.5);
+            const dir = end.clone().sub(start);
+            const rod = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, dir.length(), 10), mat);
+            rod.position.copy(mid);
+            rod.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+            return rod;
+        }
+
+        function buildCar() {
+            const car = new THREE.Group();
+            car.name = 'true-3d-f1-car';
+
+            const mainBody = mesh(new THREE.CylinderGeometry(0.42, 0.42, 2.8, 36), materials.navy, [-0.08, 0.15, 0], [0, 0, Math.PI / 2], [1, 0.72, 0.86]);
+            car.add(mainBody);
+            car.add(mesh(new THREE.SphereGeometry(0.42, 32, 16), materials.navy, [-1.48, 0.15, 0], [0, 0, 0], [0.55, 0.72, 0.86]));
+            car.add(mesh(new THREE.SphereGeometry(0.42, 32, 16), materials.navy, [1.32, 0.15, 0], [0, 0, 0], [0.55, 0.72, 0.86]));
+            car.add(mesh(new THREE.ConeGeometry(0.28, 1.7, 28), materials.red, [-1.92, 0.05, 0], [0, 0, Math.PI / 2], [1, 0.72, 0.72]));
+            car.add(mesh(new THREE.BoxGeometry(1.25, 0.16, 0.16), materials.yellow, [-1.08, 0.18, 0.01], [0, 0, -0.04]));
+            car.add(mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.05, 28), materials.navy, [0.95, 0.44, 0], [0, 0, Math.PI / 2], [1, 0.9, 1.18]));
+            car.add(mesh(new THREE.BoxGeometry(1.25, 0.44, 0.82), materials.red, [0.32, -0.02, 0], [0, 0, 0], [1, 0.74, 1]));
+            car.add(mesh(new THREE.BoxGeometry(1.18, 0.28, 0.42), materials.navyDark, [1.28, 0.14, 0], [0, 0, 0.12]));
+            car.add(mesh(new THREE.BoxGeometry(3.8, 0.08, 1.65), materials.carbon, [0.1, -0.32, 0], [0, 0, 0]));
+
+            car.add(mesh(new THREE.SphereGeometry(0.32, 28, 18), materials.glass, [-0.05, 0.58, 0], [0, 0, 0], [1.1, 0.52, 0.88]));
+            car.add(mesh(new THREE.TorusGeometry(0.42, 0.035, 10, 40, Math.PI * 1.35), materials.carbon, [-0.06, 0.76, 0], [Math.PI / 2, 0, Math.PI * 0.08], [1.05, 1, 0.72]));
+            car.add(rodBetween([-0.42, 0.48, 0], [-0.05, 0.98, 0], 0.035, materials.carbon));
+
+            const frontWing = new THREE.Group();
+            frontWing.position.set(-2.72, -0.12, 0);
+            frontWing.add(mesh(new THREE.BoxGeometry(0.26, 0.08, 2.35), materials.navyDark, [0, 0, 0]));
+            frontWing.add(mesh(new THREE.BoxGeometry(0.18, 0.08, 2.1), materials.red, [-0.18, 0.10, 0], [0, 0.12, 0]));
+            frontWing.add(mesh(new THREE.BoxGeometry(0.18, 0.07, 1.7), materials.yellow, [0.12, 0.19, 0], [0, -0.10, 0]));
+            car.add(frontWing);
+
+            const rearWing = new THREE.Group();
+            rearWing.position.set(2.28, 0.6, 0);
+            rearWing.add(mesh(new THREE.BoxGeometry(0.18, 0.1, 2.0), materials.red, [0, 0, 0]));
+            rearWing.add(mesh(new THREE.BoxGeometry(0.18, 0.09, 1.8), materials.yellow, [0.12, 0.28, 0], [0, -0.1, 0]));
+            rearWing.add(rodBetween([0, -0.58, -0.72], [0, 0.22, -0.72], 0.025, materials.carbon));
+            rearWing.add(rodBetween([0, -0.58, 0.72], [0, 0.22, 0.72], 0.025, materials.carbon));
+            car.add(rearWing);
+
+            const wheels = [];
+            for (const x of [-1.9, 1.55]) {
+                for (const z of [-1.02, 1.02]) {
+                    const wheel = new THREE.Group();
+                    wheel.position.set(x, -0.36, z);
+                    wheel.add(mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.32, 48), materials.tire, [0, 0, 0], [Math.PI / 2, 0, 0]));
+                    wheel.add(mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.34, 32), materials.rubberSide, [0, 0, 0], [Math.PI / 2, 0, 0]));
+                    wheel.add(mesh(new THREE.TorusGeometry(0.31, 0.018, 8, 42), materials.yellow, [0, 0, z > 0 ? 0.18 : -0.18], [Math.PI / 2, 0, 0]));
+                    wheels.push(wheel);
+                    car.add(wheel);
+                }
+            }
+            car.userData.wheels = wheels;
+
+            for (const x of [-1.9, 1.55]) {
+                car.add(rodBetween([x, -0.18, -0.86], [x * 0.72, 0.08, -0.34], 0.025, materials.carbon));
+                car.add(rodBetween([x, -0.18, 0.86], [x * 0.72, 0.08, 0.34], 0.025, materials.carbon));
+                car.add(rodBetween([x + 0.12, -0.48, -0.78], [x + 0.12, -0.48, 0.78], 0.035, materials.carbon));
+            }
+
+            car.add(mesh(new THREE.BoxGeometry(0.92, 0.08, 0.07), materials.yellow, [-0.36, 0.5, -0.43], [0.08, 0, -0.18]));
+            car.add(mesh(new THREE.BoxGeometry(0.92, 0.08, 0.07), materials.yellow, [-0.36, 0.5, 0.43], [-0.08, 0, -0.18]));
+            car.add(mesh(new THREE.BoxGeometry(0.7, 0.09, 0.06), materials.red, [0.7, 0.47, -0.44], [0.14, 0, 0.16]));
+            car.add(mesh(new THREE.BoxGeometry(0.7, 0.09, 0.06), materials.red, [0.7, 0.47, 0.44], [-0.14, 0, 0.16]));
+
+            return car;
+        }
+
+        const car = buildCar();
+        scene.add(car);
+
+        const floor = new THREE.GridHelper(18, 28, 0x35c8ff, 0x17345f);
+        floor.position.y = -0.82;
+        floor.material.transparent = true;
+        floor.material.opacity = 0.42;
+        scene.add(floor);
+
+        const tunnelRings = new THREE.Group();
+        for (let i = 0; i < 9; i++) {
+            const ring = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.BoxGeometry(0.04, 4.5, 5.4)),
+                new THREE.LineBasicMaterial({ color: i % 2 ? 0x35c8ff : 0xffd42a, transparent: true, opacity: 0.16 })
+            );
+            ring.position.x = -6 + i * 1.55;
+            tunnelRings.add(ring);
+        }
+        scene.add(tunnelRings);
+
+        const fanGroup = new THREE.Group();
+        fanGroup.position.set(-5.7, 0.4, 0);
+        fanGroup.rotation.y = Math.PI / 2;
+        fanGroup.add(new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.035, 12, 72), materials.navyDark));
+        for (let i = 0; i < 6; i++) {
+            const blade = mesh(new THREE.BoxGeometry(1.55, 0.08, 0.24), materials.flowMeshBlue, [0.72, 0, 0], [0, 0, i * Math.PI / 3]);
+            fanGroup.add(blade);
+        }
+        scene.add(fanGroup);
+
+        const flowLines = [];
+        const flowGroup = new THREE.Group();
+        scene.add(flowGroup);
+
+        function flowPoint(x, yBase, zBase, phase, lane) {
+            const noseInfluence = Math.exp(-Math.pow((x + 1.25) / 1.5, 2));
+            const sidepodInfluence = Math.exp(-Math.pow((x - 0.15) / 1.25, 2));
+            const wakeInfluence = x > 1.3 ? Math.min(1, (x - 1.3) / 3.2) : 0;
+            const signY = yBase >= 0 ? 1 : -1;
+            const signZ = zBase >= 0 ? 1 : -1;
+            const vortex = Math.sin(x * 4.2 + phase + lane * 0.7) * wakeInfluence;
+
+            return new THREE.Vector3(
+                x,
+                yBase + signY * (0.46 * noseInfluence + 0.25 * sidepodInfluence) + vortex * 0.18,
+                zBase + signZ * (0.62 * sidepodInfluence + 0.25 * noseInfluence) + Math.cos(x * 3.6 + phase) * wakeInfluence * 0.24
+            );
+        }
+
+        function createFlowLine(y, z, mat, lane) {
+            const points = [];
+            for (let i = 0; i < 92; i++) {
+                const x = -7 + i * (15 / 91);
+                points.push(flowPoint(x, y, z, 0, lane));
+            }
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, mat.clone());
+            line.userData = { y, z, lane, phase: Math.random() * 100, speed: 0.9 + Math.random() * 0.7 };
+            flowLines.push(line);
+            flowGroup.add(line);
+        }
+
+        let lane = 0;
+        [-1.25, -0.78, -0.34, 0.34, 0.78, 1.25].forEach(z => {
+            [-0.52, -0.18, 0.18, 0.52, 0.92].forEach(y => {
+                createFlowLine(y, z, lane % 5 === 0 ? materials.flowYellow : materials.flowBlue, lane++);
             });
-
-            stage.addEventListener("pointermove", (event) => {
-                if (!isDragging) return;
-                const dx = event.clientX - lastX;
-                const dy = event.clientY - lastY;
-                rotationY += dx * 0.45;
-                rotationX = Math.max(-42, Math.min(26, rotationX - dy * 0.35));
-                lastX = event.clientX;
-                lastY = event.clientY;
-                applyRotation();
-            });
-
-            const stopDrag = () => {
-                isDragging = false;
-                stage.classList.remove("dragging");
-            };
-
-            stage.addEventListener("pointerup", stopDrag);
-            stage.addEventListener("pointercancel", stopDrag);
-            stage.addEventListener("wheel", (event) => {
-                event.preventDefault();
-                targetBoost = Math.max(0, Math.min(1, targetBoost + (event.deltaY < 0 ? 0.12 : -0.12)));
-                document.body.style.setProperty("--boost", targetBoost.toFixed(2));
-            }, { passive: false });
-
-            boostButton.addEventListener("click", () => {
-                targetBoost = targetBoost > 0.65 ? 0.18 : 1;
-                document.body.style.setProperty("--boost", targetBoost.toFixed(2));
-                boostButton.textContent = targetBoost > 0.65 ? "Ease airflow" : "Ignite airflow boost";
-            });
-
-            resetButton.addEventListener("click", () => {
-                rotationX = -12;
-                rotationY = -24;
-                targetBoost = 0;
-                document.body.style.setProperty("--boost", "0");
-                boostButton.textContent = "Ignite airflow boost";
-                applyRotation();
-            });
-
-            window.addEventListener("resize", resizeCanvas);
-            document.body.style.setProperty("--boost", "0");
-            applyRotation();
-            resizeCanvas();
-            drawAirflow();
         });
+        [-1.65, 1.65].forEach(z => [-0.38, 0.05, 0.48].forEach(y => createFlowLine(y, z, materials.flowRed, lane++)));
+
+        const vortices = new THREE.Group();
+        scene.add(vortices);
+        for (let i = 0; i < 18; i++) {
+            const curvePts = [];
+            const radius = 0.22 + (i % 3) * 0.08;
+            const offsetZ = (i % 2 ? 1 : -1) * (0.68 + (i % 4) * 0.16);
+            for (let t = 0; t < 80; t++) {
+                const a = t * 0.32;
+                curvePts.push(new THREE.Vector3(2.0 + t * 0.055, Math.sin(a) * radius + 0.05, offsetZ + Math.cos(a) * radius));
+            }
+            const line = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints(curvePts),
+                (i % 3 === 0 ? materials.flowRed : materials.flowBlue).clone()
+            );
+            line.material.opacity = 0.25;
+            line.userData = { phase: Math.random() * 10, offsetZ };
+            vortices.add(line);
+        }
+
+        function resize() {
+            const rect = stage.getBoundingClientRect();
+            renderer.setSize(rect.width, rect.height, false);
+            camera.aspect = rect.width / rect.height;
+            camera.updateProjectionMatrix();
+        }
+
+        function setBoost(value) {
+            boostTarget = Math.max(0, Math.min(1, value));
+            document.body.style.setProperty('--boost', boostTarget.toFixed(2));
+            boostButton.textContent = boostTarget > 0.65 ? 'Ease airflow' : 'Ignite airflow boost';
+        }
+
+        boostButton.addEventListener('click', () => setBoost(boostTarget > 0.65 ? 0.18 : 1));
+        resetButton.addEventListener('click', () => {
+            setBoost(0);
+            camera.position.set(6.3, 3.2, 6.7);
+            controls.target.set(0, 0.15, 0);
+            controls.update();
+        });
+        stage.addEventListener('wheel', (event) => {
+            if (!event.ctrlKey) setBoost(boostTarget + (event.deltaY < 0 ? 0.08 : -0.08));
+        }, { passive: true });
+        window.addEventListener('resize', resize);
+
+        function animate() {
+            const elapsed = clock.getElapsedTime();
+            const dt = clock.getDelta();
+            boost += (boostTarget - boost) * 0.055;
+            tunnelSpeed = 0.92 + boost * 2.5;
+
+            car.userData.wheels.forEach((wheel) => { wheel.rotation.z -= dt * (8 + boost * 18); });
+            car.rotation.y = Math.sin(elapsed * 0.45) * 0.035;
+            car.rotation.z = Math.sin(elapsed * 0.7) * 0.012;
+            fanGroup.rotation.x -= dt * (4 + boost * 11);
+            tunnelRings.children.forEach((ring, i) => { ring.material.opacity = 0.10 + Math.sin(elapsed * 2.4 + i) * 0.035 + boost * 0.08; });
+
+            flowLines.forEach((line) => {
+                const { y, z, lane, phase, speed } = line.userData;
+                const positions = line.geometry.attributes.position.array;
+                const shift = ((elapsed * tunnelSpeed * speed + phase) % 1) * 0.65;
+                for (let i = 0; i < 92; i++) {
+                    let x = -7 + i * (15 / 91) + shift;
+                    if (x > 8) x -= 15;
+                    const p = flowPoint(x, y, z, elapsed * (1.4 + boost), lane);
+                    positions[i * 3] = p.x;
+                    positions[i * 3 + 1] = p.y;
+                    positions[i * 3 + 2] = p.z;
+                }
+                line.geometry.attributes.position.needsUpdate = true;
+                line.material.opacity = 0.24 + boost * 0.42 + Math.sin(elapsed * 2 + lane) * 0.05;
+            });
+
+            vortices.children.forEach((line, i) => {
+                line.rotation.x = elapsed * (0.7 + boost * 1.7) + i;
+                line.position.x = Math.sin(elapsed * 0.85 + i) * 0.12;
+                line.material.opacity = 0.10 + boost * 0.34;
+            });
+
+            redLight.intensity = 2.7 + boost * 2.4;
+            cyanLight.intensity = 2.7 + boost * 2.8;
+            yellowLight.intensity = 1.8 + boost * 2.1;
+
+            airSpeed.textContent = Math.round(247 + boost * 126 + Math.sin(elapsed * 2.1) * 4);
+            dragIndex.textContent = (0.78 - boost * 0.18 + Math.sin(elapsed * 1.4) * 0.015).toFixed(2);
+            downforce.textContent = Math.round(2140 + boost * 960 + Math.cos(elapsed * 1.7) * 44);
+            flowState.textContent = boost > 0.72 ? 'TURBULENT WAKE' : boost > 0.3 ? 'SIDEWASH ACTIVE' : 'ATTACHED FLOW';
+
+            controls.update();
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        resize();
+        setBoost(0);
+        animate();
     </script>
 </body>
 </html>
