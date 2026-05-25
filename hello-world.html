@@ -67,6 +67,11 @@
                     <strong id="downforce">2140</strong>
                     <small>kgf*</small>
                 </div>
+                <div class="metric">
+                    <span>FAN RPM</span>
+                    <strong id="fan-rpm">650</strong>
+                    <small>airflow-linked</small>
+                </div>
                 <div class="metric wide">
                     <span>FLOW STATE</span>
                     <strong id="flow-state">ATTACHED FLOW</strong>
@@ -88,11 +93,14 @@
         const airSpeed = document.getElementById('air-speed');
         const dragIndex = document.getElementById('drag-index');
         const downforce = document.getElementById('downforce');
+        const fanRpm = document.getElementById('fan-rpm');
         const flowState = document.getElementById('flow-state');
 
         let boostTarget = 0;
         let boost = 0;
         let tunnelSpeed = 1;
+        let fanAngularVelocity = 3.2;
+        let fanRpmValue = 650;
         const clock = new THREE.Clock();
 
         const scene = new THREE.Scene();
@@ -351,9 +359,16 @@
             boost += (boostTarget - boost) * 0.055;
             tunnelSpeed = 0.92 + boost * 2.5;
 
+            const airflowLoad = Math.max(0, Math.min(1, (tunnelSpeed - 0.92) / 2.5));
+            const targetFanRpm = 650 + airflowLoad * 8600;
+            fanRpmValue += (targetFanRpm - fanRpmValue) * 0.075;
+            const targetAngularVelocity = (fanRpmValue * Math.PI * 2 / 60) * 0.085;
+
             modelRoot.rotation.y = Math.sin(elapsed * 0.45) * 0.025;
             modelRoot.rotation.z = Math.sin(elapsed * 0.7) * 0.008;
-            fanRotor.rotation.z -= dt * (5.5 + boost * 15);
+            fanAngularVelocity += (targetAngularVelocity - fanAngularVelocity) * 0.12;
+            fanRotor.rotation.z -= dt * fanAngularVelocity;
+            materials.flowMeshBlue.opacity = 0.34 + airflowLoad * 0.34;
             tunnelRings.children.forEach((ring, i) => { ring.material.opacity = 0.10 + Math.sin(elapsed * 2.4 + i) * 0.035 + boost * 0.08; });
 
             flowLines.forEach((line) => {
@@ -382,7 +397,9 @@
             cyanLight.intensity = 2.7 + boost * 2.8;
             yellowLight.intensity = 1.8 + boost * 2.1;
 
-            airSpeed.textContent = Math.round(247 + boost * 126 + Math.sin(elapsed * 2.1) * 4);
+            const currentAirSpeed = Math.round(247 + boost * 126 + Math.sin(elapsed * 2.1) * 4);
+            airSpeed.textContent = currentAirSpeed;
+            fanRpm.textContent = Math.round(fanRpmValue + Math.sin(elapsed * 3.2) * (18 + airflowLoad * 55));
             dragIndex.textContent = (0.78 - boost * 0.18 + Math.sin(elapsed * 1.4) * 0.015).toFixed(2);
             downforce.textContent = Math.round(2140 + boost * 960 + Math.cos(elapsed * 1.7) * 44);
             flowState.textContent = boost > 0.72 ? 'TURBULENT WAKE' : boost > 0.3 ? 'SIDEWASH ACTIVE' : 'ATTACHED FLOW';
