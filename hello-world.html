@@ -244,12 +244,17 @@
         scene.add(tunnelRings);
 
         const fanGroup = new THREE.Group();
-        fanGroup.position.set(-5.7, 0.4, 0);
+        fanGroup.position.set(-6.15, 0, 0);
         fanGroup.rotation.y = Math.PI / 2;
-        fanGroup.add(new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.035, 12, 72), materials.navyDark));
-        for (let i = 0; i < 6; i++) {
-            const blade = mesh(new THREE.BoxGeometry(1.55, 0.08, 0.24), materials.flowMeshBlue, [0.72, 0, 0], [0, 0, i * Math.PI / 3]);
-            fanGroup.add(blade);
+        fanGroup.add(new THREE.Mesh(new THREE.TorusGeometry(1.95, 0.04, 12, 96), materials.navyDark));
+        fanGroup.add(new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.035, 10, 48), materials.flowMeshBlue));
+
+        const fanRotor = new THREE.Group();
+        fanRotor.name = 'centered-spinning-fan-rotor';
+        fanGroup.add(fanRotor);
+        for (let i = 0; i < 8; i++) {
+            const blade = mesh(new THREE.BoxGeometry(1.7, 0.1, 0.22), materials.flowMeshBlue, [0.78, 0, 0], [0, 0, i * Math.PI / 4]);
+            fanRotor.add(blade);
         }
         scene.add(fanGroup);
 
@@ -345,7 +350,7 @@
 
             modelRoot.rotation.y = Math.sin(elapsed * 0.45) * 0.025;
             modelRoot.rotation.z = Math.sin(elapsed * 0.7) * 0.008;
-            fanGroup.rotation.x -= dt * (4 + boost * 11);
+            fanRotor.rotation.z -= dt * (5.5 + boost * 15);
             tunnelRings.children.forEach((ring, i) => { ring.material.opacity = 0.10 + Math.sin(elapsed * 2.4 + i) * 0.035 + boost * 0.08; });
 
             flowLines.forEach((line) => {
