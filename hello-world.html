@@ -253,8 +253,11 @@
         fanRotor.name = 'centered-spinning-fan-rotor';
         fanGroup.add(fanRotor);
         for (let i = 0; i < 8; i++) {
-            const blade = mesh(new THREE.BoxGeometry(1.7, 0.1, 0.22), materials.flowMeshBlue, [0.78, 0, 0], [0, 0, i * Math.PI / 4]);
-            fanRotor.add(blade);
+            const bladeArm = new THREE.Group();
+            bladeArm.rotation.z = i * Math.PI / 4;
+            const blade = mesh(new THREE.BoxGeometry(1.7, 0.1, 0.22), materials.flowMeshBlue, [0.78, 0, 0], [0, 0, 0.18]);
+            bladeArm.add(blade);
+            fanRotor.add(bladeArm);
         }
         scene.add(fanGroup);
 
