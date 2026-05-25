@@ -199,7 +199,9 @@
                 importedCar.position.sub(rawCenter);
 
                 const lengthAxisIsZ = rawSize.z > rawSize.x;
-                importedCar.rotation.y = lengthAxisIsZ ? Math.PI / 2 : 0;
+                const alignLongAxisWithTunnel = lengthAxisIsZ ? Math.PI / 2 : 0;
+                const pointNoseTowardFan = Math.PI;
+                importedCar.rotation.y = alignLongAxisWithTunnel + pointNoseTowardFan;
                 modelRoot.add(importedCar);
 
                 const fittedBox = new THREE.Box3().setFromObject(modelRoot);
