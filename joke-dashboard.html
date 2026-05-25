@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes Joke Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="joke-dashboard.css?v=joke-dashboard-restored-20260525">
+</head>
+<body>
+    <header class="top-header">
+        <nav class="header-nav" aria-label="Main menu">
+            <a class="header-link" href="/hello-world.html">F1 Wind Tunnel</a>
+            <a class="header-link" href="https://www.perplexity.ai/computer/a/lake-norman-dashboard-hpEeo1IDQGuNEaWQGlTd8g" target="_blank" rel="noopener noreferrer">Lake Norman Dashboard</a>
+            <a class="header-link" href="https://welday-ent-dashboard.lovable.app/venture/groundbnb/app/3" target="_blank" rel="noopener noreferrer">Welday Enterprises</a>
+        </nav>
+    </header>
+    <main class="container">
+        <h1 id="main-title">Hermes Agent Dashboard</h1>
+        <div class="glass-card" id="info-card">
+            <p id="joke-display" style="font-size: 1.2rem; min-height: 3em; display: flex; align-items: center; justify-content: center;"></p>
+            <button class="action-btn" id="new-joke-button" type="button">Tell me another joke</button>
+        </div>
+    </main>
+
+    <script>
+        const jokes = [
+            "Why do programmers prefer dark mode?<br>Because light attracts bugs.",
+            "How many programmers does it take to change a light bulb?<br>None, that's a hardware problem.",
+            "There are 10 types of people in the world: those who understand binary, and those who don't.",
+            "I'd tell you a UDP joke, but you might not get it.",
+            "What's a programmer's favorite hangout place?<br>Foo Bar.",
+            "Why did the programmer quit his job?<br>Because he didn't get arrays.",
+            "Real programmers count from 0.",
+            "A SQL query goes into a bar, walks up to two tables and asks... 'Can I join you?'",
+            "How do you comfort a JavaScript bug?<br>You console it.",
+            "An SEO expert walks into a bar, bars, pub, tavern, public house, Irish pub, drinks, beer, alcohol.",
+            "Why did the developer go broke?<br>Because he used up all his cache.",
+            "Why are Assembly programmers always soaking wet?<br>They work below C-level.",
+            "There's no place like 127.0.0.1.",
+            "To understand what recursion is, you must first understand recursion.",
+            "I've got a great joke about a blocked process, but I'm still waiting to tell it.",
+            "Why did the programmer get stuck in the shower?<br>The instructions said: Lather, Rinse, Repeat.",
+            "Programmer (noun.) - A machine that turns coffee into code.",
+            "A programmer puts two glasses on his bedside table before going to sleep. A full one, in case he gets thirsty, and an empty one, in case he doesn't.",
+            "What is the most used language in programming?<br>Profanity.",
+            "Why do Java programmers have to wear glasses?<br>Because they don't C#.",
+            "Debugging: Removing the needles from the haystack.",
+            "Software developers like to solve problems. If there are no problems handily available, they will create their own problems.",
+            "Algorithm: Word used by programmers when they do not want to explain what they did.",
+            "Hardware: The part of a computer that you can kick.",
+            "I would love to change the world, but they won't give me the source code.",
+            "There is no CTRL-Z in life.",
+            "A programmer's wife tells him: 'Go to the store and buy a loaf of bread. If they have eggs, buy a dozen.' The programmer returns with 12 loaves.",
+            "Programming is like sex: One mistake and you have to support it for the rest of your life.",
+            "Unix is user-friendly. It's just very particular about who its friends are.",
+            "I tried to explain to my computer that I needed a break, but it didn't compute.",
+            "My code doesn't work, I have no idea why. My code works, I have no idea why.",
+            "Any fool can write code that a computer can understand. Good programmers write code that humans can understand.",
+            "If at first you don't succeed, call it version 1.0.",
+            "Programmers don't die, they just branch to a new address.",
+            "The best thing about a boolean is even if you are wrong, you are only off by a bit.",
+            "Why did the edge server cross the road? To get to the other node.",
+            "A clean desk is a sign of a cluttered desk drawer.",
+            "I'm not a slacker, my code is just compiling.",
+            "Computers are fast; developers keep them slow.",
+            "I have a joke about a time-traveler, but you didn't like it.",
+            "Why was the JavaScript developer sad?<br>Because they didn't Node how to Express themselves.",
+            "Why did the function break up with the variable?<br>It found too many unresolved dependencies.",
+            "Why was the computer cold?<br>It left its Windows open.",
+            "Why do Python programmers wear glasses?<br>Because they can't C.",
+            "What's a database administrator's favorite exercise?<br>Table joins.",
+            "Why did the CSS developer go to therapy?<br>Too many unresolved margins.",
+            "Why did the HTML tag feel lonely?<br>It had no body.",
+            "Why did the Git repository get promoted?<br>It had a lot of commits.",
+            "Why did the AI cross the road?<br>It predicted there was a chicken on the other side.",
+            "I told my computer I needed space.<br>It gave me a 1TB external drive.",
+            "Why did the frontend developer panic?<br>The button was centered on the first try.",
+            "Why are programmers bad at hide and seek?<br>Because good luck hiding when everything is in plain text.",
+            "What did the server say after a long day?<br>I need to cache out.",
+            "Why did the regex quit its job?<br>It couldn't handle all the character issues."
+        ];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const jokeDisplay = document.getElementById("joke-display");
+            const newJokeButton = document.getElementById("new-joke-button");
+            let lastJokeIndex = -1;
+
+            const showRandomJoke = () => {
+                let randomIndex = Math.floor(Math.random() * jokes.length);
+                if (jokes.length > 1) {
+                    while (randomIndex === lastJokeIndex) {
+                        randomIndex = Math.floor(Math.random() * jokes.length);
+                    }
+                }
+                lastJokeIndex = randomIndex;
+                jokeDisplay.innerHTML = jokes[randomIndex];
+            };
+
+            newJokeButton.addEventListener("click", showRandomJoke);
+            showRandomJoke();
+        });
+    </script>
+</body>
+</html>

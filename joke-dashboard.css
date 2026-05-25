@@ -1,0 +1,204 @@
+:root {
+    --bg-dark: #0a0b1e;
+    --primary: #ff00ff;
+    --secondary: #00ffff;
+    --accent: #ff007f;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --text: #ffffff;
+    --text-dim: rgba(255, 255, 255, 0.7);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.top-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 18px 24px;
+    background: rgba(10, 11, 30, 0.62);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(173, 216, 230, 0.18);
+}
+
+.header-nav {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.header-link {
+    color: #add8e6;
+    text-decoration: none;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: color 0.25s ease, text-shadow 0.25s ease;
+}
+
+.header-link:hover,
+.header-link:focus-visible {
+    color: #d8f6ff;
+    text-shadow: 0 0 14px rgba(173, 216, 230, 0.75);
+    outline: none;
+}
+
+/* Background Animation Elements */
+body::before, body::after {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    filter: blur(100px);
+    z-index: -1;
+    animation: pulse 10s infinite alternate ease-in-out;
+}
+
+body::before {
+    background: var(--primary);
+    top: 10%;
+    left: 10%;
+    opacity: 0.3;
+}
+
+body::after {
+    background: var(--secondary);
+    bottom: 10%;
+    right: 10%;
+    opacity: 0.3;
+    animation-delay: -5s;
+}
+
+.container {
+    text-align: center;
+    width: 90%;
+    max-width: 600px;
+    padding: 40px;
+    z-index: 1;
+}
+
+h1 {
+    font-size: 4rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    background: linear-gradient(90deg, #8a2be2, #ff1744, #00ff7f, #8a2be2);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    letter-spacing: -1px;
+    animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1), titleGradientFlow 4s ease-in-out infinite;
+    text-shadow: 0 0 28px rgba(138, 43, 226, 0.35);
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: var(--text-dim);
+    margin-bottom: 40px;
+    font-weight: 300;
+    animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.2s;
+}
+
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: slideUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.4s;
+}
+
+.glass-card p {
+    line-height: 1.6;
+    margin-bottom: 30px;
+    color: var(--text-dim);
+}
+
+.action-btn {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 10px 20px -5px rgba(255, 0, 255, 0.4);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 15px 30px -5px rgba(255, 0, 255, 0.6);
+}
+
+.action-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* Animations */
+@keyframes pulse {
+    0% { transform: scale(1) translate(0, 0); }
+    100% { transform: scale(1.5) translate(50px, 50px); }
+}
+
+@keyframes titleGradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .top-header {
+        justify-content: center;
+        padding: 14px 12px;
+    }
+
+    .header-link {
+        font-size: 0.9rem;
+    }
+
+    h1 { font-size: 2.5rem; }
+    .glass-card { padding: 25px; }
+}
