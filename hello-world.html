@@ -29,12 +29,12 @@
         <section class="hero-panel" aria-labelledby="main-title">
             <div class="eyebrow">Three.js prototype • theatrical aero visualization</div>
             <h1 id="main-title">F1 Wind Tunnel</h1>
-            <p class="subtitle">A true 3D F1-style car built from geometry, with orbit controls and airflow streamlines that split over the nose, around the sidepods, and curl into a wake behind the rear wing.</p>
+            <p class="subtitle">A realistic downloaded Formula 1 GLB model in a WebGL wind tunnel, with orbit controls and airflow streamlines that split over the nose, around the sidepods, and curl into a wake behind the rear wing.</p>
 
             <div class="control-card" aria-label="Simulation controls">
                 <button class="action-btn" id="boost-button" type="button">Ignite airflow boost</button>
                 <button class="ghost-btn" id="reset-view" type="button">Reset view</button>
-                <p class="small-note">Drag to orbit the 3D car • scroll to zoom • airflow is visual, not CFD-accurate</p>
+                <p class="small-note">Drag to orbit the GLB car • scroll to zoom • airflow is visual, not CFD-accurate</p>
             </div>
         </section>
 
@@ -48,6 +48,7 @@
                 <div class="webgl-wrap" id="wind-tunnel-3d" role="img" aria-label="Interactive three dimensional Formula 1 wind tunnel model"></div>
                 <div class="hud-label top-left">flow splits around nose + sidepods</div>
                 <div class="hud-label bottom-right">wake vortices behind rear wing</div>
+                <div class="model-credit">F1 GLB model: dark_igorek / CC Attribution via Get3DModels</div>
             </div>
 
             <aside class="telemetry" aria-label="Visual telemetry readout">
@@ -78,6 +79,7 @@
     <script type="module">
         import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
         import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+        import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
         const container = document.getElementById('wind-tunnel-3d');
         const stage = document.getElementById('tunnel-stage');
@@ -97,7 +99,7 @@
         scene.fog = new THREE.FogExp2(0x05091f, 0.055);
 
         const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 80);
-        camera.position.set(6.3, 3.2, 6.7);
+        camera.position.set(6.0, 2.7, 5.8);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -138,9 +140,9 @@
             tire: new THREE.MeshStandardMaterial({ color: 0x080808, metalness: 0.15, roughness: 0.82 }),
             rubberSide: new THREE.MeshStandardMaterial({ color: 0x202020, metalness: 0.1, roughness: 0.9 }),
             glass: new THREE.MeshPhysicalMaterial({ color: 0x68e8ff, metalness: 0.1, roughness: 0.08, transmission: 0.1, transparent: true, opacity: 0.72 }),
-            flowBlue: new THREE.LineBasicMaterial({ color: 0x35c8ff, transparent: true, opacity: 0.58, blending: THREE.AdditiveBlending }),
-            flowYellow: new THREE.LineBasicMaterial({ color: 0xffd42a, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending }),
-            flowRed: new THREE.LineBasicMaterial({ color: 0xff143b, transparent: true, opacity: 0.36, blending: THREE.AdditiveBlending }),
+            flowBlue: new THREE.LineBasicMaterial({ color: 0x35c8ff, transparent: true, opacity: 0.46, blending: THREE.AdditiveBlending }),
+            flowYellow: new THREE.LineBasicMaterial({ color: 0xffd42a, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending }),
+            flowRed: new THREE.LineBasicMaterial({ color: 0xff143b, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending }),
             flowMeshBlue: new THREE.MeshBasicMaterial({ color: 0x35c8ff, transparent: true, opacity: 0.48, blending: THREE.AdditiveBlending })
         };
 
@@ -165,70 +167,62 @@
             return rod;
         }
 
-        function buildCar() {
-            const car = new THREE.Group();
-            car.name = 'true-3d-f1-car';
+        const modelRoot = new THREE.Group();
+        modelRoot.name = 'realistic-downloaded-f1-glb-model';
+        scene.add(modelRoot);
 
-            const mainBody = mesh(new THREE.CylinderGeometry(0.42, 0.42, 2.8, 36), materials.navy, [-0.08, 0.15, 0], [0, 0, Math.PI / 2], [1, 0.72, 0.86]);
-            car.add(mainBody);
-            car.add(mesh(new THREE.SphereGeometry(0.42, 32, 16), materials.navy, [-1.48, 0.15, 0], [0, 0, 0], [0.55, 0.72, 0.86]));
-            car.add(mesh(new THREE.SphereGeometry(0.42, 32, 16), materials.navy, [1.32, 0.15, 0], [0, 0, 0], [0.55, 0.72, 0.86]));
-            car.add(mesh(new THREE.ConeGeometry(0.28, 1.7, 28), materials.red, [-1.92, 0.05, 0], [0, 0, Math.PI / 2], [1, 0.72, 0.72]));
-            car.add(mesh(new THREE.BoxGeometry(1.25, 0.16, 0.16), materials.yellow, [-1.08, 0.18, 0.01], [0, 0, -0.04]));
-            car.add(mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.05, 28), materials.navy, [0.95, 0.44, 0], [0, 0, Math.PI / 2], [1, 0.9, 1.18]));
-            car.add(mesh(new THREE.BoxGeometry(1.25, 0.44, 0.82), materials.red, [0.32, -0.02, 0], [0, 0, 0], [1, 0.74, 1]));
-            car.add(mesh(new THREE.BoxGeometry(1.18, 0.28, 0.42), materials.navyDark, [1.28, 0.14, 0], [0, 0, 0.12]));
-            car.add(mesh(new THREE.BoxGeometry(3.8, 0.08, 1.65), materials.carbon, [0.1, -0.32, 0], [0, 0, 0]));
+        const loadingBeacon = document.createElement('div');
+        loadingBeacon.className = 'loading-beacon';
+        loadingBeacon.textContent = 'Loading realistic F1 model…';
+        stage.appendChild(loadingBeacon);
 
-            car.add(mesh(new THREE.SphereGeometry(0.32, 28, 18), materials.glass, [-0.05, 0.58, 0], [0, 0, 0], [1.1, 0.52, 0.88]));
-            car.add(mesh(new THREE.TorusGeometry(0.42, 0.035, 10, 40, Math.PI * 1.35), materials.carbon, [-0.06, 0.76, 0], [Math.PI / 2, 0, Math.PI * 0.08], [1.05, 1, 0.72]));
-            car.add(rodBetween([-0.42, 0.48, 0], [-0.05, 0.98, 0], 0.035, materials.carbon));
+        const loader = new GLTFLoader();
+        loader.load(
+            'assets/models/mclaren_mp45_formula_1.glb',
+            (gltf) => {
+                const importedCar = gltf.scene;
+                importedCar.name = 'mclaren-mp45-formula-1-glb';
+                importedCar.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        if (child.material) {
+                            child.material.side = THREE.FrontSide;
+                            child.material.needsUpdate = true;
+                        }
+                    }
+                });
 
-            const frontWing = new THREE.Group();
-            frontWing.position.set(-2.72, -0.12, 0);
-            frontWing.add(mesh(new THREE.BoxGeometry(0.26, 0.08, 2.35), materials.navyDark, [0, 0, 0]));
-            frontWing.add(mesh(new THREE.BoxGeometry(0.18, 0.08, 2.1), materials.red, [-0.18, 0.10, 0], [0, 0.12, 0]));
-            frontWing.add(mesh(new THREE.BoxGeometry(0.18, 0.07, 1.7), materials.yellow, [0.12, 0.19, 0], [0, -0.10, 0]));
-            car.add(frontWing);
+                const rawBox = new THREE.Box3().setFromObject(importedCar);
+                const rawSize = rawBox.getSize(new THREE.Vector3());
+                const rawCenter = rawBox.getCenter(new THREE.Vector3());
+                importedCar.position.sub(rawCenter);
 
-            const rearWing = new THREE.Group();
-            rearWing.position.set(2.28, 0.6, 0);
-            rearWing.add(mesh(new THREE.BoxGeometry(0.18, 0.1, 2.0), materials.red, [0, 0, 0]));
-            rearWing.add(mesh(new THREE.BoxGeometry(0.18, 0.09, 1.8), materials.yellow, [0.12, 0.28, 0], [0, -0.1, 0]));
-            rearWing.add(rodBetween([0, -0.58, -0.72], [0, 0.22, -0.72], 0.025, materials.carbon));
-            rearWing.add(rodBetween([0, -0.58, 0.72], [0, 0.22, 0.72], 0.025, materials.carbon));
-            car.add(rearWing);
+                const lengthAxisIsZ = rawSize.z > rawSize.x;
+                importedCar.rotation.y = lengthAxisIsZ ? Math.PI / 2 : 0;
+                modelRoot.add(importedCar);
 
-            const wheels = [];
-            for (const x of [-1.9, 1.55]) {
-                for (const z of [-1.02, 1.02]) {
-                    const wheel = new THREE.Group();
-                    wheel.position.set(x, -0.36, z);
-                    wheel.add(mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.32, 48), materials.tire, [0, 0, 0], [Math.PI / 2, 0, 0]));
-                    wheel.add(mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.34, 32), materials.rubberSide, [0, 0, 0], [Math.PI / 2, 0, 0]));
-                    wheel.add(mesh(new THREE.TorusGeometry(0.31, 0.018, 8, 42), materials.yellow, [0, 0, z > 0 ? 0.18 : -0.18], [Math.PI / 2, 0, 0]));
-                    wheels.push(wheel);
-                    car.add(wheel);
-                }
+                const fittedBox = new THREE.Box3().setFromObject(modelRoot);
+                const fittedSize = fittedBox.getSize(new THREE.Vector3());
+                const targetLength = 5.85;
+                const scale = targetLength / Math.max(fittedSize.x, 0.001);
+                modelRoot.scale.setScalar(scale);
+
+                const finalBox = new THREE.Box3().setFromObject(modelRoot);
+                const finalCenter = finalBox.getCenter(new THREE.Vector3());
+                modelRoot.position.sub(finalCenter);
+                modelRoot.position.y += 0.04;
+                loadingBeacon.textContent = 'Realistic F1 GLB loaded';
+                loadingBeacon.classList.add('loaded');
+                setTimeout(() => loadingBeacon.remove(), 1600);
+            },
+            undefined,
+            (error) => {
+                console.error('F1 GLB model failed to load', error);
+                loadingBeacon.textContent = 'Model failed to load — airflow still running';
+                loadingBeacon.classList.add('error');
             }
-            car.userData.wheels = wheels;
-
-            for (const x of [-1.9, 1.55]) {
-                car.add(rodBetween([x, -0.18, -0.86], [x * 0.72, 0.08, -0.34], 0.025, materials.carbon));
-                car.add(rodBetween([x, -0.18, 0.86], [x * 0.72, 0.08, 0.34], 0.025, materials.carbon));
-                car.add(rodBetween([x + 0.12, -0.48, -0.78], [x + 0.12, -0.48, 0.78], 0.035, materials.carbon));
-            }
-
-            car.add(mesh(new THREE.BoxGeometry(0.92, 0.08, 0.07), materials.yellow, [-0.36, 0.5, -0.43], [0.08, 0, -0.18]));
-            car.add(mesh(new THREE.BoxGeometry(0.92, 0.08, 0.07), materials.yellow, [-0.36, 0.5, 0.43], [-0.08, 0, -0.18]));
-            car.add(mesh(new THREE.BoxGeometry(0.7, 0.09, 0.06), materials.red, [0.7, 0.47, -0.44], [0.14, 0, 0.16]));
-            car.add(mesh(new THREE.BoxGeometry(0.7, 0.09, 0.06), materials.red, [0.7, 0.47, 0.44], [-0.14, 0, 0.16]));
-
-            return car;
-        }
-
-        const car = buildCar();
-        scene.add(car);
+        );
 
         const floor = new THREE.GridHelper(18, 28, 0x35c8ff, 0x17345f);
         floor.position.y = -0.82;
@@ -332,7 +326,7 @@
         boostButton.addEventListener('click', () => setBoost(boostTarget > 0.65 ? 0.18 : 1));
         resetButton.addEventListener('click', () => {
             setBoost(0);
-            camera.position.set(6.3, 3.2, 6.7);
+            camera.position.set(6.0, 2.7, 5.8);
             controls.target.set(0, 0.15, 0);
             controls.update();
         });
@@ -347,9 +341,8 @@
             boost += (boostTarget - boost) * 0.055;
             tunnelSpeed = 0.92 + boost * 2.5;
 
-            car.userData.wheels.forEach((wheel) => { wheel.rotation.z -= dt * (8 + boost * 18); });
-            car.rotation.y = Math.sin(elapsed * 0.45) * 0.035;
-            car.rotation.z = Math.sin(elapsed * 0.7) * 0.012;
+            modelRoot.rotation.y = Math.sin(elapsed * 0.45) * 0.025;
+            modelRoot.rotation.z = Math.sin(elapsed * 0.7) * 0.008;
             fanGroup.rotation.x -= dt * (4 + boost * 11);
             tunnelRings.children.forEach((ring, i) => { ring.material.opacity = 0.10 + Math.sin(elapsed * 2.4 + i) * 0.035 + boost * 0.08; });
 
@@ -366,7 +359,7 @@
                     positions[i * 3 + 2] = p.z;
                 }
                 line.geometry.attributes.position.needsUpdate = true;
-                line.material.opacity = 0.24 + boost * 0.42 + Math.sin(elapsed * 2 + lane) * 0.05;
+                line.material.opacity = 0.16 + boost * 0.32 + Math.sin(elapsed * 2 + lane) * 0.04;
             });
 
             vortices.children.forEach((line, i) => {
