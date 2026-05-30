@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flip Tracker Cockpit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="flip-tracker.css?v=20260530-1">
+</head>
+<body>
+    <header class="top-header">
+        <nav class="header-nav" aria-label="Main menu">
+            <a class="header-link" href="/hello-world.html">F1 Wind Tunnel</a>
+            <a class="header-link" href="/joke-dashboard.html">Joke Dashboard</a>
+            <a class="header-link active" href="/flip-tracker.html">Flip Tracker</a>
+            <a class="header-link" href="https://welday-ent-dashboard.lovable.app/venture/groundbnb/app/3" target="_blank" rel="noopener noreferrer">Welday Enterprises</a>
+        </nav>
+    </header>
+
+    <main class="cockpit-shell">
+        <section class="mission-bar" aria-label="Tracker summary">
+            <div class="mission-title">
+                <span>FB Marketplace</span>
+                <h1>Flip Tracker Cockpit</h1>
+            </div>
+            <div class="mission-kpis" aria-label="Summary KPIs">
+                <div><span>Visible</span><strong id="visible-count">0</strong></div>
+                <div><span>Records</span><strong id="total-count">0</strong></div>
+                <div><span>GO Rate</span><strong id="go-rate">0%</strong></div>
+                <div><span>Avg ROI</span><strong id="avg-roi">0%</strong></div>
+            </div>
+        </section>
+
+        <section class="control-deck" aria-label="Filters and sorting">
+            <label>
+                <span>Search</span>
+                <input id="search-input" type="search" placeholder="title, brand, seller, keyword">
+            </label>
+            <label>
+                <span>Location</span>
+                <select id="location-filter"></select>
+            </label>
+            <label>
+                <span>Verdict</span>
+                <select id="verdict-filter"></select>
+            </label>
+            <label>
+                <span>KPI Filter</span>
+                <select id="kpi-filter">
+                    <option value="all">All records</option>
+                    <option value="go">GO only</option>
+                    <option value="roi60">ROI 60%+</option>
+                    <option value="profit50">Profit $50+</option>
+                    <option value="ask100">Ask $100 or less</option>
+                    <option value="caution">Caution / no-go</option>
+                </select>
+            </label>
+            <label>
+                <span>Sort</span>
+                <select id="sort-select">
+                    <option value="roi-desc">ROI high to low</option>
+                    <option value="profit-desc">Profit high to low</option>
+                    <option value="ask-asc">Ask low to high</option>
+                    <option value="ask-desc">Ask high to low</option>
+                    <option value="maxbuy-asc">Max buy low to high</option>
+                    <option value="days-asc">Fastest sell time</option>
+                    <option value="location-asc">Location A-Z</option>
+                    <option value="title-asc">Title A-Z</option>
+                </select>
+            </label>
+            <button class="reset-btn" id="reset-filters" type="button">Reset</button>
+        </section>
+
+        <section class="review-grid" aria-label="Record review">
+            <aside class="record-rail" aria-label="Filtered records">
+                <div class="rail-header">
+                    <span>Targets</span>
+                    <strong id="rail-count">0</strong>
+                </div>
+                <div id="record-list" class="record-list"></div>
+            </aside>
+
+            <article class="record-panel" aria-live="polite">
+                <div class="record-toolbar">
+                    <button id="prev-record" class="nav-btn" type="button" aria-label="Previous record">Prev</button>
+                    <div>
+                        <span id="record-position" class="record-position">0 / 0</span>
+                        <h2 id="record-title">No records</h2>
+                    </div>
+                    <button id="next-record" class="nav-btn" type="button" aria-label="Next record">Next</button>
+                </div>
+
+                <div class="hud-strip" aria-label="Primary metrics">
+                    <div class="gauge">
+                        <div class="gauge-face" id="roi-gauge"><strong id="roi-value">0%</strong></div>
+                        <span>ROI</span>
+                    </div>
+                    <div class="gauge">
+                        <div class="gauge-face" id="profit-gauge"><strong id="profit-value">$0</strong></div>
+                        <span>Profit</span>
+                    </div>
+                    <div class="gauge">
+                        <div class="gauge-face" id="buy-gauge"><strong id="buy-value">$0</strong></div>
+                        <span>Max Buy</span>
+                    </div>
+                    <div class="gauge">
+                        <div class="gauge-face" id="confidence-gauge"><strong id="confidence-value">-</strong></div>
+                        <span>Confidence</span>
+                    </div>
+                </div>
+
+                <div class="quick-read" aria-label="Quick record facts">
+                    <div><span>Verdict</span><strong id="quick-verdict">-</strong></div>
+                    <div><span>Ask</span><strong id="quick-ask">-</strong></div>
+                    <div><span>Location</span><strong id="quick-location">-</strong></div>
+                    <div><span>Sell Time</span><strong id="quick-days">-</strong></div>
+                </div>
+
+                <div id="accordion-zone" class="accordion-zone"></div>
+            </article>
+        </section>
+    </main>
+
+    <script src="flip-tracker-data.js?v=20260530-1"></script>
+    <script src="flip-tracker.js?v=20260530-1"></script>
+</body>
+</html>
