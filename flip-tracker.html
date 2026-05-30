@@ -88,6 +88,7 @@
                     <div>
                         <span id="record-position" class="record-position">0 / 0</span>
                         <h2 id="record-title">No records</h2>
+                        <div id="verdict-indicator" class="verdict-indicator">Verdict: -</div>
                     </div>
                     <button id="next-record" class="nav-btn" type="button" aria-label="Next record">Next</button>
                 </div>
@@ -117,6 +118,23 @@
                     <div><span>Location</span><strong id="quick-location">-</strong></div>
                     <div><span>Sell Time</span><strong id="quick-days">-</strong></div>
                 </div>
+
+                <section class="price-scale-panel" aria-label="Price KPI scale">
+                    <div class="price-scale-header">
+                        <h3>Price Scale</h3>
+                        <span id="price-scale-range">0 - $0</span>
+                    </div>
+                    <div class="price-scale-wrap" id="price-scale-wrap">
+                        <div class="zone buy-zone" id="buy-zone"></div>
+                        <div class="zone caution-zone" id="caution-zone"></div>
+                        <div class="zone sell-zone" id="sell-zone"></div>
+                        <div class="range-band buy-band" id="buy-band"></div>
+                        <div class="range-band sell-band" id="sell-band"></div>
+                        <div class="price-axis"></div>
+                        <div id="price-markers" class="price-markers"></div>
+                    </div>
+                    <div id="price-scale-legend" class="price-scale-legend"></div>
+                </section>
 
                 <div id="accordion-zone" class="accordion-zone"></div>
             </article>

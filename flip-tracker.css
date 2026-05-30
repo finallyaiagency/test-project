@@ -209,6 +209,26 @@ h2 {
     background: var(--panel);
 }
 
+.record-panel {
+    min-height: 640px;
+    border-width: 2px;
+}
+
+.record-panel[data-verdict="GO"] {
+    border-color: rgba(66, 245, 167, 0.82);
+    box-shadow: inset 0 0 0 1px rgba(66, 245, 167, 0.26);
+}
+
+.record-panel[data-verdict="CAUTION"] {
+    border-color: rgba(255, 184, 74, 0.82);
+    box-shadow: inset 0 0 0 1px rgba(255, 184, 74, 0.24);
+}
+
+.record-panel[data-verdict="NO-GO"] {
+    border-color: rgba(255, 77, 90, 0.82);
+    box-shadow: inset 0 0 0 1px rgba(255, 77, 90, 0.24);
+}
+
 .record-rail {
     max-height: calc(100vh - 198px);
     position: sticky;
@@ -302,10 +322,6 @@ h2 {
     border-color: rgba(255, 77, 90, 0.45);
 }
 
-.record-panel {
-    min-height: 640px;
-}
-
 .record-toolbar {
     display: grid;
     grid-template-columns: 82px 1fr 82px;
@@ -322,6 +338,36 @@ h2 {
     color: var(--amber);
     font-weight: 900;
     letter-spacing: 0.08em;
+}
+
+.verdict-indicator {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 5px 11px;
+    border: 1px solid rgba(244, 240, 223, 0.24);
+    background: rgba(16, 20, 17, 0.85);
+    color: var(--ink);
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.verdict-indicator.go {
+    color: var(--hud);
+    border-color: rgba(66, 245, 167, 0.62);
+}
+
+.verdict-indicator.caution {
+    color: var(--amber);
+    border-color: rgba(255, 184, 74, 0.62);
+}
+
+.verdict-indicator.no-go {
+    color: var(--danger);
+    border-color: rgba(255, 77, 90, 0.62);
 }
 
 .hud-strip {
@@ -372,6 +418,149 @@ h2 {
     display: grid;
     grid-template-columns: repeat(4, minmax(140px, 1fr));
     gap: 10px;
+}
+
+.price-scale-panel {
+    margin: 0 18px 18px;
+    padding: 14px;
+    border: 1px solid rgba(244, 240, 223, 0.13);
+    background: rgba(244, 240, 223, 0.03);
+}
+
+.price-scale-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.price-scale-header h3 {
+    margin: 0;
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+#price-scale-range {
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+}
+
+.price-scale-wrap {
+    position: relative;
+    min-height: 142px;
+    border: 1px solid rgba(244, 240, 223, 0.14);
+    background: rgba(9, 13, 11, 0.82);
+    overflow: hidden;
+}
+
+.zone {
+    position: absolute;
+    top: 0;
+    bottom: 22px;
+}
+
+.buy-zone {
+    background: linear-gradient(90deg, rgba(66, 245, 167, 0.2), rgba(66, 245, 167, 0.09));
+}
+
+.caution-zone {
+    background: linear-gradient(90deg, rgba(255, 184, 74, 0.2), rgba(255, 184, 74, 0.09));
+}
+
+.sell-zone {
+    background: linear-gradient(90deg, rgba(85, 214, 255, 0.2), rgba(85, 214, 255, 0.09));
+}
+
+.range-band {
+    position: absolute;
+    top: 8px;
+    height: 12px;
+    border-radius: 999px;
+}
+
+.buy-band {
+    background: rgba(66, 245, 167, 0.95);
+}
+
+.sell-band {
+    background: rgba(85, 214, 255, 0.95);
+}
+
+.price-axis {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 22px;
+    height: 2px;
+    background: rgba(244, 240, 223, 0.32);
+}
+
+.price-markers {
+    position: absolute;
+    inset: 0;
+}
+
+.price-marker {
+    --x: 0%;
+    --row: 0;
+    --tone: var(--steel);
+    position: absolute;
+    left: var(--x);
+    top: calc(28px + (var(--row) * 28px));
+    transform: translateX(-50%);
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+}
+
+.price-marker::before {
+    content: "";
+    width: 2px;
+    height: calc(80px - (var(--row) * 10px));
+    background: color-mix(in oklab, var(--tone) 60%, black);
+}
+
+.price-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--tone);
+    box-shadow: 0 0 12px color-mix(in oklab, var(--tone) 55%, transparent);
+}
+
+.price-chip {
+    min-height: 20px;
+    padding: 1px 7px;
+    border: 1px solid color-mix(in oklab, var(--tone) 52%, white);
+    color: color-mix(in oklab, var(--tone) 76%, white);
+    background: rgba(9, 13, 11, 0.95);
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.price-scale-legend {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.legend-item {
+    min-height: 22px;
+    padding: 2px 8px;
+    border: 1px solid rgba(244, 240, 223, 0.2);
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
 .accordion-zone {
@@ -484,6 +673,10 @@ details[open] summary::after {
     .field-grid,
     .control-deck {
         grid-template-columns: 1fr;
+    }
+
+    .price-scale-wrap {
+        min-height: 220px;
     }
 
     .reset-btn {

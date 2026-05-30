@@ -14,9 +14,14 @@
             location: getAny(values, ["Location"]) || "Unknown",
             verdict: normalizeVerdict(getAny(values, ["Verdict"])),
             ask: parseMoney(getAny(values, ["Ask Price"])),
+            openingOffer: parseMoney(getAny(values, ["Opening Offer"])),
             maxBuy: parseMoney(getAny(values, ["Max Buy Price"])),
+            listPrice: parseMoney(getAny(values, ["List Price"])),
+            acceptPrice: parseMoney(getAny(values, ["Accept Price"])),
+            estimatedCosts: parseMoney(getAny(values, ["Estimated Costs", "Est. Costs"])),
             profit: parseMoney(getAny(values, ["Estimated Gross Profit", "Est. Gross Profit"])),
             roi: parsePercent(getAny(values, ["ROI", "ROI %"])),
+            newEstimate: parseMoney(getAny(values, ["New Price Estimate", "New Retail Price", "MSRP", "List Price"])),
             days: parseFirstNumber(getAny(values, ["Sell Days Min", "Est. Days to Sell"])),
             confidence: getAny(values, ["Confidence"]) || "-",
             searchable: headers.map((header) => get(values, header)).join(" ").toLowerCase()
@@ -57,7 +62,17 @@
         quickAsk: document.getElementById("quick-ask"),
         quickLocation: document.getElementById("quick-location"),
         quickDays: document.getElementById("quick-days"),
-        accordion: document.getElementById("accordion-zone")
+        accordion: document.getElementById("accordion-zone"),
+        panel: document.querySelector(".record-panel"),
+        verdictIndicator: document.getElementById("verdict-indicator"),
+        priceScaleRange: document.getElementById("price-scale-range"),
+        buyZone: document.getElementById("buy-zone"),
+        cautionZone: document.getElementById("caution-zone"),
+        sellZone: document.getElementById("sell-zone"),
+        buyBand: document.getElementById("buy-band"),
+        sellBand: document.getElementById("sell-band"),
+        priceMarkers: document.getElementById("price-markers"),
+        priceLegend: document.getElementById("price-scale-legend")
     };
 
     function get(values, key) {
@@ -220,6 +235,9 @@
             els.position.textContent = "0 / 0";
             els.title.textContent = "No records";
             els.accordion.innerHTML = '<div class="empty-state">Adjust filters to show records.</div>';
+            els.panel.dataset.verdict = "";
+            els.verdictIndicator.textContent = "Verdict: -";
+            clearPriceScale();
             return;
         }
 
@@ -235,11 +253,13 @@
         els.quickAsk.textContent = money(record.ask);
         els.quickLocation.textContent = record.location;
         els.quickDays.textContent = safeText(sellDays(values));
+        setVerdictVisual(record.verdict);
 
         setGauge(els.roiGauge, record.roi, 120, record.roi >= 60 ? "var(--hud)" : "var(--amber)");
         setGauge(els.profitGauge, record.profit, 400, record.profit >= 50 ? "var(--hud)" : "var(--amber)");
         setGauge(els.buyGauge, record.maxBuy, Math.max(100, record.ask || record.maxBuy || 100), "var(--cyan)");
         setGauge(els.confidenceGauge, confidenceScore(record.confidence), 100, confidenceTone(record.confidence));
+        renderPriceScale(record);
 
         els.accordion.innerHTML = [
             section("Mission Brief", values, ["Scan Timestamp", "Date analyzed", "Status", "Listing ID", "Listing URL", "URL", "Title", "Ask Price", "Location", "Verdict", "Confidence", "Sell Days Min", "Sell Days Max", "Est. Days to Sell"], true),
@@ -250,6 +270,102 @@
             section("Seller Messages", values, ["Soft Seller Message", "Soft Message", "Lowball Seller Message", "Lowball Message", "Recommended Message"], false),
             allColumns(values)
         ].join("");
+    }
+
+    function setVerdictVisual(verdict) {
+        const normalized = normalizeVerdict(verdict);
+        els.panel.dataset.verdict = normalized;
+        const tone = verdictClass(normalized);
+        els.verdictIndicator.className = "verdict-indicator";
+        if (tone) els.verdictIndicator.classList.add(tone);
+        els.verdictIndicator.textContent = `Verdict: ${normalized}`;
+    }
+
+    function clearPriceScale() {
+        els.priceScaleRange.textContent = "0 - $0";
+        els.buyZone.style.left = "0%";
+        els.buyZone.style.width = "0%";
+        els.cautionZone.style.left = "0%";
+        els.cautionZone.style.width = "0%";
+        els.sellZone.style.left = "0%";
+        els.sellZone.style.width = "100%";
+        els.buyBand.style.left = "0%";
+        els.buyBand.style.width = "0%";
+        els.sellBand.style.left = "0%";
+        els.sellBand.style.width = "0%";
+        els.priceMarkers.innerHTML = "";
+        els.priceLegend.innerHTML = "";
+    }
+
+    function renderPriceScale(record) {
+        const targetSale = [record.maxBuy, record.estimatedCosts, record.profit].every((value) => value != null)
+            ? record.maxBuy + record.estimatedCosts + record.profit
+            : null;
+        const points = [
+            { label: "Opening", value: record.openingOffer, tone: "var(--hud)" },
+            { label: "Max Buy", value: record.maxBuy, tone: "var(--hud)" },
+            { label: "Ask", value: record.ask, tone: "var(--amber)" },
+            { label: "Accept", value: record.acceptPrice, tone: "var(--cyan)" },
+            { label: "List", value: record.listPrice, tone: "var(--cyan)" },
+            { label: "New Est", value: record.newEstimate, tone: "#a0c4ff" },
+            { label: "Costs", value: record.estimatedCosts, tone: "var(--steel)" },
+            { label: "Profit Target", value: targetSale, tone: "var(--danger)" }
+        ].filter((point) => point.value != null && !Number.isNaN(point.value));
+
+        if (!points.length) {
+            clearPriceScale();
+            return;
+        }
+
+        const maxima = points.map((point) => point.value);
+        const scaleMax = Math.max(1, ...maxima);
+        const buyEnd = clamp(0, valueOr(record.maxBuy, scaleMax * 0.35), scaleMax);
+        const cautionEnd = clamp(buyEnd, valueOr(record.acceptPrice, scaleMax * 0.68), scaleMax);
+
+        els.priceScaleRange.textContent = `0 - ${money(scaleMax)}`;
+
+        setSpan(els.buyZone, 0, buyEnd, scaleMax);
+        setSpan(els.cautionZone, buyEnd, cautionEnd, scaleMax);
+        setSpan(els.sellZone, cautionEnd, scaleMax, scaleMax);
+        setSpan(els.buyBand, valueOr(record.openingOffer, buyEnd * 0.65), buyEnd, scaleMax);
+        setSpan(els.sellBand, valueOr(record.acceptPrice, cautionEnd), valueOr(record.listPrice, scaleMax), scaleMax);
+
+        els.priceMarkers.innerHTML = points.map((point, index) => {
+            const position = pctPos(point.value, scaleMax);
+            return `
+                <div class="price-marker" style="--x:${position}%;--row:${index % 3};--tone:${point.tone}">
+                    <span class="price-dot"></span>
+                    <span class="price-chip">${escapeHtml(point.label)} ${escapeHtml(money(point.value))}</span>
+                </div>
+            `;
+        }).join("");
+
+        els.priceLegend.innerHTML = [
+            `<span class="legend-item">Buy Zone: 0 to ${escapeHtml(money(buyEnd))}</span>`,
+            `<span class="legend-item">Sell Zone: ${escapeHtml(money(cautionEnd))} to ${escapeHtml(money(scaleMax))}</span>`,
+            `<span class="legend-item">Target Profit: ${escapeHtml(money(record.profit))}</span>`
+        ].join("");
+    }
+
+    function setSpan(element, start, end, max) {
+        const from = pctPos(clamp(0, start, max), max);
+        const to = pctPos(clamp(0, end, max), max);
+        const width = Math.max(0, to - from);
+        element.style.left = `${from}%`;
+        element.style.width = `${width}%`;
+    }
+
+    function pctPos(value, max) {
+        if (max <= 0) return 0;
+        return (value / max) * 100;
+    }
+
+    function valueOr(value, fallback) {
+        return value == null || Number.isNaN(value) ? fallback : value;
+    }
+
+    function clamp(min, value, max) {
+        return Math.min(max, Math.max(min, value));
     }
 
     function sellDays(values) {

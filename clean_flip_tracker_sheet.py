@@ -178,9 +178,10 @@ def quality_from(old_media: str, confidence: str) -> str:
 
 
 def price_justification(row: dict[str, object]) -> str:
-    required = ["Max Buy Price", "Accept Price", "Estimated Costs", "Estimated Gross Profit", "ROI"]
-    if any(row.get(key) in ("", None) for key in required):
-        return "Needs pricing review; prior row did not contain complete numeric pricing."
+    required = ["Max Buy Price", "Opening Offer", "List Price", "Accept Price", "Estimated Costs", "Estimated Gross Profit", "ROI"]
+    missing = [key for key in required if row.get(key) in ("", None)]
+    if missing:
+        return "Needs pricing review: missing numeric values for " + ", ".join(missing) + "."
     return (
         f"Buy cap ${row['Max Buy Price']:.0f}; accept floor ${row['Accept Price']:.0f}; "
         f"costs ${row['Estimated Costs']:.0f}; expected profit ${row['Estimated Gross Profit']:.0f}; "
@@ -252,7 +253,10 @@ def transform_rows(old_values: list[list[object]]) -> list[list[object]]:
             "Actual Listing ID": old_get(old, "Actual Listing ID") or item_id,
             "Notes": old_get(old, "Notes") or "Cleaned from prior tracker schema; canonical URL and numeric fields normalized.",
         }
-        row["Price Justification"] = row["Price Justification"] or price_justification(row)
+        computed_justification = price_justification(row)
+        existing_just = str(row["Price Justification"] or "").strip()
+        if not existing_just or "needs pricing review" in existing_just.lower():
+            row["Price Justification"] = computed_justification
 
         critical = ["Listing ID", "Title", "Ask Price", "Max Buy Price", "Opening Offer", "List Price", "Accept Price", "Estimated Gross Profit", "ROI", "Verdict"]
         if any(row.get(key) in ("", None) for key in critical):
