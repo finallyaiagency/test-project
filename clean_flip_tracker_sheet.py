@@ -189,6 +189,36 @@ def price_justification(row: dict[str, object]) -> str:
     )
 
 
+def recommended_message(row: dict[str, object]) -> str:
+    existing = str(row.get("Recommended Message") or "").strip()
+    if existing:
+        return existing
+
+    soft = str(row.get("Soft Seller Message") or "").strip()
+    lowball = str(row.get("Lowball Seller Message") or "").strip()
+    verdict = str(row.get("Verdict") or "").upper()
+    ask = row.get("Ask Price")
+    max_buy = row.get("Max Buy Price")
+    opening = row.get("Opening Offer")
+    accept = row.get("Accept Price")
+
+    if soft and lowball:
+        if ask is not None and max_buy is not None and ask > (max_buy * 1.10):
+            return lowball
+        if verdict in {"CAUTION", "NO-GO"}:
+            return lowball
+        return soft
+    if soft:
+        return soft
+    if lowball:
+        return lowball
+
+    offer = opening if opening is not None else (max_buy if max_buy is not None else accept)
+    if offer is not None:
+        return f"Hi, is this still available? I can do ${offer:.0f} cash pickup today if condition matches the listing."
+    return "Hi, is this still available? Please confirm condition and your best pickup price."
+
+
 def transform_rows(old_values: list[list[object]]) -> list[list[object]]:
     if not old_values:
         return [NEW_HEADERS]
@@ -257,6 +287,7 @@ def transform_rows(old_values: list[list[object]]) -> list[list[object]]:
         existing_just = str(row["Price Justification"] or "").strip()
         if not existing_just or "needs pricing review" in existing_just.lower():
             row["Price Justification"] = computed_justification
+        row["Recommended Message"] = recommended_message(row)
 
         critical = ["Listing ID", "Title", "Ask Price", "Max Buy Price", "Opening Offer", "List Price", "Accept Price", "Estimated Gross Profit", "ROI", "Verdict"]
         if any(row.get(key) in ("", None) for key in critical):
