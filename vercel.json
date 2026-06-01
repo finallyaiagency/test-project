@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/hello-world"
+      "destination": "/flip-tracker"
     }
   ]
 }

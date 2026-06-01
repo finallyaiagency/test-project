@@ -15,6 +15,7 @@
             <a class="header-link" href="/hello-world.html">F1 Wind Tunnel</a>
             <a class="header-link" href="/joke-dashboard.html">Joke Dashboard</a>
             <a class="header-link active" href="/flip-tracker.html">Flip Tracker</a>
+            <a class="header-link" href="/Flipping%20Income%20Chart/">Income Chart</a>
             <a class="header-link" href="https://welday-ent-dashboard.lovable.app/venture/groundbnb/app/3" target="_blank" rel="noopener noreferrer">Welday Enterprises</a>
         </nav>
     </header>
@@ -93,6 +94,34 @@
                     <button id="next-record" class="nav-btn" type="button" aria-label="Next record">Next</button>
                 </div>
 
+                <section class="price-scale-panel" aria-label="Price KPI scale">
+                    <div class="price-scale-header">
+                        <h3>Price Scale</h3>
+                        <div class="scale-max-control">
+                            <label for="scale-max-select">Scale</label>
+                            <select id="scale-max-select">
+                                <option value="auto" selected>Auto</option>
+                                <option value="100">100</option>
+                                <option value="500">500</option>
+                                <option value="1000">1000</option>
+                                <option value="2000">2000</option>
+                                <option value="5000">5000</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="price-scale-wrap" id="price-scale-wrap">
+                        <div class="zone buy-zone" id="buy-zone"></div>
+                        <div class="zone caution-zone" id="caution-zone"></div>
+                        <div class="zone sell-zone" id="sell-zone"></div>
+                        <div class="range-band buy-band" id="buy-band"></div>
+                        <div class="range-band sell-band" id="sell-band"></div>
+                        <div id="price-guides" class="price-guides"></div>
+                        <div class="price-axis"></div>
+                        <div id="price-markers" class="price-markers"></div>
+                    </div>
+                    <div id="price-scale-legend" class="price-scale-legend"></div>
+                </section>
+
                 <div class="hud-strip" aria-label="Primary metrics">
                     <div class="gauge">
                         <div class="gauge-face" id="roi-gauge"><strong id="roi-value">0%</strong></div>
@@ -118,23 +147,6 @@
                     <div><span>Location</span><strong id="quick-location">-</strong></div>
                     <div><span>Sell Time</span><strong id="quick-days">-</strong></div>
                 </div>
-
-                <section class="price-scale-panel" aria-label="Price KPI scale">
-                    <div class="price-scale-header">
-                        <h3>Price Scale</h3>
-                        <span id="price-scale-range">0 - $0</span>
-                    </div>
-                    <div class="price-scale-wrap" id="price-scale-wrap">
-                        <div class="zone buy-zone" id="buy-zone"></div>
-                        <div class="zone caution-zone" id="caution-zone"></div>
-                        <div class="zone sell-zone" id="sell-zone"></div>
-                        <div class="range-band buy-band" id="buy-band"></div>
-                        <div class="range-band sell-band" id="sell-band"></div>
-                        <div class="price-axis"></div>
-                        <div id="price-markers" class="price-markers"></div>
-                    </div>
-                    <div id="price-scale-legend" class="price-scale-legend"></div>
-                </section>
 
                 <div id="accordion-zone" class="accordion-zone"></div>
             </article>

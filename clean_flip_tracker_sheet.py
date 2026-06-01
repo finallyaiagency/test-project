@@ -144,6 +144,8 @@ def canonical_url(item_id: str, fallback: str) -> str:
 
 def normalize_verdict(value: str) -> str:
     lower = str(value or "").lower()
+    if "strong" in lower:
+        return "STRONG GO"
     if "no" in lower:
         return "NO-GO"
     if "caution" in lower or "review" in lower:

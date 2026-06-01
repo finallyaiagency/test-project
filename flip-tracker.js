@@ -1,4 +1,5 @@
 (function () {
+    const SCALE_MAX_STORAGE_KEY = "flip_tracker_scale_max";
     const data = window.FLIP_TRACKER_DATA || { headers: [], rows: [] };
     const headers = data.headers || [];
     const records = (data.rows || []).map((row, index) => {
@@ -28,6 +29,8 @@
         };
     });
 
+    const strongGoTopTwoIds = computeStrongGoTopTwoIds(records);
+
     const state = {
         filtered: [],
         selectedId: records[0] ? records[0].id : null
@@ -39,6 +42,7 @@
         verdict: document.getElementById("verdict-filter"),
         kpi: document.getElementById("kpi-filter"),
         sort: document.getElementById("sort-select"),
+        scaleMax: document.getElementById("scale-max-select"),
         reset: document.getElementById("reset-filters"),
         list: document.getElementById("record-list"),
         railCount: document.getElementById("rail-count"),
@@ -65,12 +69,12 @@
         accordion: document.getElementById("accordion-zone"),
         panel: document.querySelector(".record-panel"),
         verdictIndicator: document.getElementById("verdict-indicator"),
-        priceScaleRange: document.getElementById("price-scale-range"),
         buyZone: document.getElementById("buy-zone"),
         cautionZone: document.getElementById("caution-zone"),
         sellZone: document.getElementById("sell-zone"),
         buyBand: document.getElementById("buy-band"),
         sellBand: document.getElementById("sell-band"),
+        priceGuides: document.getElementById("price-guides"),
         priceMarkers: document.getElementById("price-markers"),
         priceLegend: document.getElementById("price-scale-legend")
     };
@@ -109,6 +113,7 @@
     function normalizeVerdict(value) {
         const raw = String(value || "").trim();
         const lower = raw.toLowerCase();
+        if (lower.includes("strong")) return "STRONG GO";
         if (lower.includes("no")) return "NO-GO";
         if (lower.includes("caution")) return "CAUTION";
         if (lower.includes("go")) return "GO";
@@ -141,6 +146,10 @@
         return "";
     }
 
+    function displayVerdict(record) {
+        return isStrongGo(record) ? "STRONG GO" : normalizeVerdict(record?.verdict);
+    }
+
     function buildFilters() {
         const locations = Array.from(new Set(records.map((record) => record.location).filter(Boolean))).sort((a, b) => a.localeCompare(b));
         const verdicts = Array.from(new Set(records.map((record) => record.verdict).filter(Boolean))).sort((a, b) => a.localeCompare(b));
@@ -161,12 +170,12 @@
         state.filtered = records.filter((record) => {
             if (query && !record.searchable.includes(query)) return false;
             if (location !== "all" && record.location !== location) return false;
-            if (verdict !== "all" && record.verdict !== verdict) return false;
-            if (kpi === "go" && record.verdict !== "GO") return false;
+            if (verdict !== "all" && displayVerdict(record) !== verdict) return false;
+            if (kpi === "go" && !["GO", "STRONG GO"].includes(displayVerdict(record))) return false;
             if (kpi === "roi60" && !(record.roi != null && record.roi >= 60)) return false;
             if (kpi === "profit50" && !(record.profit != null && record.profit >= 50)) return false;
             if (kpi === "ask100" && !(record.ask != null && record.ask <= 100)) return false;
-            if (kpi === "caution" && record.verdict === "GO") return false;
+            if (kpi === "caution" && ["GO", "STRONG GO"].includes(displayVerdict(record))) return false;
             return true;
         });
 
@@ -202,7 +211,7 @@
 
     function renderSummary() {
         const visible = state.filtered.length;
-        const go = state.filtered.filter((record) => record.verdict === "GO").length;
+        const go = state.filtered.filter((record) => ["GO", "STRONG GO"].includes(displayVerdict(record))).length;
         const roiValues = state.filtered.map((record) => record.roi).filter((value) => value != null && !Number.isNaN(value));
         const avg = roiValues.length ? roiValues.reduce((sum, value) => sum + value, 0) / roiValues.length : 0;
         els.visibleCount.textContent = visible;
@@ -213,8 +222,10 @@
     }
 
     function renderList() {
+        const preservedScrollTop = els.list.scrollTop;
         if (!state.filtered.length) {
             els.list.innerHTML = '<div class="empty-state">No records match these filters.</div>';
+            els.list.scrollTop = 0;
             return;
         }
         els.list.innerHTML = state.filtered.map((record) => `
@@ -222,11 +233,12 @@
                 <strong>${escapeHtml(record.title)}</strong>
                 <small>${escapeHtml(record.location)} | Ask ${escapeHtml(money(record.ask))} | ROI ${escapeHtml(pct(record.roi))}</small>
                 <span class="tag-row">
-                    <span class="tag ${verdictClass(record.verdict)}">${escapeHtml(record.verdict)}</span>
+                    <span class="tag ${verdictClass(displayVerdict(record))}">${escapeHtml(displayVerdict(record))}</span>
                     <span class="tag">${escapeHtml(money(record.profit))} profit</span>
                 </span>
             </button>
         `).join("");
+        els.list.scrollTop = preservedScrollTop;
     }
 
     function renderDetail() {
@@ -253,7 +265,7 @@
         els.quickAsk.textContent = money(record.ask);
         els.quickLocation.textContent = record.location;
         els.quickDays.textContent = safeText(sellDays(values));
-        setVerdictVisual(record.verdict);
+        setVerdictVisual(record);
 
         setGauge(els.roiGauge, record.roi, 120, record.roi >= 60 ? "var(--hud)" : "var(--amber)");
         setGauge(els.profitGauge, record.profit, 400, record.profit >= 50 ? "var(--hud)" : "var(--amber)");
@@ -272,17 +284,50 @@
         ].join("");
     }
 
-    function setVerdictVisual(verdict) {
-        const normalized = normalizeVerdict(verdict);
-        els.panel.dataset.verdict = normalized;
-        const tone = verdictClass(normalized);
+    function scoreForStrongGo(record) {
+        if (!record) return -Infinity;
+        const normalized = normalizeVerdict(record.verdict);
+        if (normalized === "NO-GO" || normalized === "CAUTION") return -Infinity;
+        const roi = record.roi == null || Number.isNaN(record.roi) ? -Infinity : record.roi;
+        const profit = record.profit == null || Number.isNaN(record.profit) ? -Infinity : record.profit;
+        if (!Number.isFinite(roi) || !Number.isFinite(profit)) return -Infinity;
+        return roi + (profit / 2);
+    }
+
+    function computeStrongGoTopTwoIds(allRecords) {
+        return new Set(
+            allRecords
+                .map((record) => ({ id: record.id, score: scoreForStrongGo(record) }))
+                .filter((entry) => Number.isFinite(entry.score) && entry.score > 0)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 2)
+                .map((entry) => entry.id)
+        );
+    }
+
+    function isStrongGo(record) {
+        if (!record) return false;
+        if (normalizeVerdict(record.verdict) === "STRONG GO") return true;
+        return strongGoTopTwoIds.has(record.id);
+    }
+
+    function setVerdictVisual(record) {
+        const normalized = normalizeVerdict(record?.verdict);
+        const verdictText = isStrongGo(record) ? "STRONG GO" : normalized;
+        els.panel.dataset.verdict = verdictText;
+        if (isStrongGo(record)) {
+            els.panel.dataset.strongGo = "true";
+        } else {
+            delete els.panel.dataset.strongGo;
+        }
+        const tone = verdictClass(verdictText);
         els.verdictIndicator.className = "verdict-indicator";
         if (tone) els.verdictIndicator.classList.add(tone);
-        els.verdictIndicator.textContent = `Verdict: ${normalized}`;
+        if (isStrongGo(record)) els.verdictIndicator.classList.add("strong-go");
+        els.verdictIndicator.textContent = `Verdict: ${verdictText}`;
     }
 
     function clearPriceScale() {
-        els.priceScaleRange.textContent = "0 - $0";
         els.buyZone.style.left = "0%";
         els.buyZone.style.width = "0%";
         els.cautionZone.style.left = "0%";
@@ -293,6 +338,7 @@
         els.buyBand.style.width = "0%";
         els.sellBand.style.left = "0%";
         els.sellBand.style.width = "0%";
+        els.priceGuides.innerHTML = "";
         els.priceMarkers.innerHTML = "";
         els.priceLegend.innerHTML = "";
     }
@@ -301,15 +347,16 @@
         const targetSale = [record.maxBuy, record.estimatedCosts, record.profit].every((value) => value != null)
             ? record.maxBuy + record.estimatedCosts + record.profit
             : null;
+        const percentBase = valueOr(record.newEstimate, valueOr(record.listPrice, null));
         const points = [
-            { label: "Opening", value: record.openingOffer, tone: "var(--hud)" },
-            { label: "Max Buy", value: record.maxBuy, tone: "var(--hud)" },
+            { label: "Opening", value: record.openingOffer, tone: "var(--buy-red)" },
+            { label: "Max Buy", value: record.maxBuy, tone: "var(--buy-red)" },
             { label: "Ask", value: record.ask, tone: "var(--amber)" },
-            { label: "Accept", value: record.acceptPrice, tone: "var(--cyan)" },
-            { label: "List", value: record.listPrice, tone: "var(--cyan)" },
-            { label: "New Est", value: record.newEstimate, tone: "#a0c4ff" },
+            { label: "Accept", value: record.acceptPrice, tone: "var(--sale-blue)" },
+            { label: "List", value: record.listPrice, tone: "var(--sale-blue)" },
+            { label: "New Est", value: record.newEstimate, tone: "var(--sale-blue)" },
             { label: "Costs", value: record.estimatedCosts, tone: "var(--steel)" },
-            { label: "Profit Target", value: targetSale, tone: "var(--danger)" }
+            { label: "Profit Target", value: targetSale, tone: "var(--profit-green)" }
         ].filter((point) => point.value != null && !Number.isNaN(point.value));
 
         if (!points.length) {
@@ -318,17 +365,16 @@
         }
 
         const maxima = points.map((point) => point.value);
-        const scaleMax = Math.max(1, ...maxima);
+        const scaleMax = getScaleMax(maxima, percentBase);
         const buyEnd = clamp(0, valueOr(record.maxBuy, scaleMax * 0.35), scaleMax);
         const cautionEnd = clamp(buyEnd, valueOr(record.acceptPrice, scaleMax * 0.68), scaleMax);
-
-        els.priceScaleRange.textContent = `0 - ${money(scaleMax)}`;
 
         setSpan(els.buyZone, 0, buyEnd, scaleMax);
         setSpan(els.cautionZone, buyEnd, cautionEnd, scaleMax);
         setSpan(els.sellZone, cautionEnd, scaleMax, scaleMax);
         setSpan(els.buyBand, valueOr(record.openingOffer, buyEnd * 0.65), buyEnd, scaleMax);
         setSpan(els.sellBand, valueOr(record.acceptPrice, cautionEnd), valueOr(record.listPrice, scaleMax), scaleMax);
+        renderGuides(scaleMax, valueOr(percentBase, scaleMax));
 
         els.priceMarkers.innerHTML = points.map((point, index) => {
             const position = pctPos(point.value, scaleMax);
@@ -345,6 +391,39 @@
             `<span class="legend-item">Sell Zone: ${escapeHtml(money(cautionEnd))} to ${escapeHtml(money(scaleMax))}</span>`,
             `<span class="legend-item">Target Profit: ${escapeHtml(money(record.profit))}</span>`
         ].join("");
+    }
+
+    function renderGuides(scaleMax, percentBase) {
+        const guidePercents = [25, 50, 60, 75, 90, 100];
+        const base = Number.isFinite(percentBase) && percentBase > 0 ? percentBase : scaleMax;
+        els.priceGuides.innerHTML = guidePercents.map((percent) => {
+            const x = clamp(0, (base * (percent / 100)), scaleMax);
+            const cls = percent === 100 ? "price-guide price-guide-100" : "price-guide";
+            return `
+                <div class="${cls}" style="--x:${pctPos(x, scaleMax)}%;" aria-hidden="true"></div>
+            `;
+        }).join("");
+    }
+
+    function getScaleMax(maxima, percentBase) {
+        const selected = String(els.scaleMax.value || "1000");
+        if (selected === "auto") return autoScaleMax(maxima, percentBase);
+        const numeric = Number(selected);
+        if (!Number.isFinite(numeric) || numeric <= 0) return 1000;
+        return numeric;
+    }
+
+    function autoScaleMax(values, percentBase) {
+        if (Number.isFinite(percentBase) && percentBase > 0) {
+            return percentBase;
+        }
+        const peak = Math.max(1, ...(values || [1]));
+        if (peak <= 100) return 100;
+        if (peak <= 500) return 500;
+        if (peak <= 1000) return 1000;
+        if (peak <= 2000) return 2000;
+        if (peak <= 5000) return 5000;
+        return Math.ceil(peak / 1000) * 1000;
     }
 
     function setSpan(element, start, end, max) {
@@ -413,7 +492,6 @@
         const next = (current + direction + state.filtered.length) % state.filtered.length;
         state.selectedId = state.filtered[next].id;
         render();
-        document.querySelector(".record-panel").scrollIntoView({ block: "start", behavior: "smooth" });
     }
 
     function escapeHtml(value) {
@@ -434,6 +512,14 @@
             el.addEventListener("input", applyFilters);
             el.addEventListener("change", applyFilters);
         });
+        els.scaleMax.addEventListener("change", () => {
+            try {
+                localStorage.setItem(SCALE_MAX_STORAGE_KEY, els.scaleMax.value);
+            } catch (_e) {
+                // Ignore storage failures
+            }
+            renderDetail();
+        });
         els.reset.addEventListener("click", () => {
             els.search.value = "";
             els.location.value = "all";
@@ -450,6 +536,15 @@
             state.selectedId = Number(button.dataset.id);
             render();
         });
+    }
+
+    try {
+        const savedScale = localStorage.getItem(SCALE_MAX_STORAGE_KEY);
+        if (savedScale && Array.from(els.scaleMax.options).some((opt) => opt.value === savedScale)) {
+            els.scaleMax.value = savedScale;
+        }
+    } catch (_e) {
+        // Ignore storage failures
     }
 
     buildFilters();

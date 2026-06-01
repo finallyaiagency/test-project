@@ -78,7 +78,7 @@ select {
 }
 
 .mission-bar {
-    min-height: 104px;
+    min-height: 86px;
     display: grid;
     grid-template-columns: minmax(260px, 1fr) minmax(420px, 1.4fr);
     align-items: center;
@@ -110,7 +110,7 @@ h2 {
 h1 {
     margin-top: 7px;
     color: var(--ink);
-    font-size: clamp(2rem, 4vw, 4.4rem);
+    font-size: clamp(1.55rem, 2.7vw, 2.9rem);
     font-weight: 900;
     letter-spacing: 0;
 }
@@ -129,7 +129,7 @@ h2 {
 
 .mission-kpis div,
 .quick-read div {
-    min-height: 72px;
+    min-height: 58px;
     border: 1px solid var(--line);
     background: rgba(16, 20, 17, 0.64);
     padding: 12px;
@@ -138,9 +138,9 @@ h2 {
 .mission-kpis strong,
 .quick-read strong {
     display: block;
-    margin-top: 8px;
+    margin-top: 6px;
     color: var(--hud);
-    font-size: clamp(1.2rem, 2vw, 1.75rem);
+    font-size: clamp(1.02rem, 1.35vw, 1.28rem);
     line-height: 1;
 }
 
@@ -217,6 +217,15 @@ h2 {
 .record-panel[data-verdict="GO"] {
     border-color: rgba(66, 245, 167, 0.82);
     box-shadow: inset 0 0 0 1px rgba(66, 245, 167, 0.26);
+}
+
+.record-panel[data-strong-go="true"] {
+    border-color: #3ff08e;
+    box-shadow:
+        inset 0 0 0 1px rgba(63, 240, 142, 0.36),
+        0 0 0 1px rgba(63, 240, 142, 0.24),
+        0 0 22px rgba(63, 240, 142, 0.35);
+    animation: strong-go-border-pulse 1.8s ease-in-out infinite;
 }
 
 .record-panel[data-verdict="CAUTION"] {
@@ -370,6 +379,50 @@ h2 {
     border-color: rgba(255, 77, 90, 0.62);
 }
 
+.verdict-indicator.strong-go {
+    border-color: rgba(63, 240, 142, 0.95);
+    background:
+        linear-gradient(90deg, rgba(63, 240, 142, 0.16), rgba(85, 214, 255, 0.12), rgba(63, 240, 142, 0.16)),
+        rgba(16, 20, 17, 0.9);
+    background-size: 220% 100%;
+    animation: strong-go-gradient 2.2s linear infinite;
+}
+
+.verdict-indicator.strong-go::after {
+    content: " • STRONG GO";
+    margin-left: 4px;
+    font-weight: 900;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #7effb7, #39e27f, #7effb7);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: strong-go-gradient 1.8s linear infinite;
+}
+
+@keyframes strong-go-gradient {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+@keyframes strong-go-border-pulse {
+    0%, 100% {
+        box-shadow:
+            inset 0 0 0 1px rgba(63, 240, 142, 0.32),
+            0 0 0 1px rgba(63, 240, 142, 0.2),
+            0 0 14px rgba(63, 240, 142, 0.22);
+    }
+    50% {
+        box-shadow:
+            inset 0 0 0 1px rgba(63, 240, 142, 0.5),
+            0 0 0 1px rgba(63, 240, 142, 0.3),
+            0 0 28px rgba(63, 240, 142, 0.45);
+    }
+}
+
 .hud-strip {
     padding: 18px;
     display: grid;
@@ -442,11 +495,37 @@ h2 {
     letter-spacing: 0.1em;
 }
 
-#price-scale-range {
-    color: var(--muted);
-    font-size: 0.8rem;
-    font-weight: 800;
-    letter-spacing: 0.07em;
+.scale-max-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.scale-max-control label {
+    color: rgba(85, 214, 255, 0.92);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+#scale-max-select {
+    min-width: 108px;
+    height: 34px;
+    border: 1px solid rgba(85, 214, 255, 0.7);
+    background: rgba(10, 20, 24, 0.94);
+    color: #bfefff;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    padding: 0 10px;
+    box-shadow: inset 0 0 0 1px rgba(85, 214, 255, 0.22);
+}
+
+#scale-max-select:focus {
+    outline: none;
+    border-color: #55d6ff;
+    box-shadow: 0 0 0 2px rgba(85, 214, 255, 0.25);
 }
 
 .price-scale-wrap {
@@ -497,6 +576,56 @@ h2 {
     bottom: 22px;
     height: 2px;
     background: rgba(244, 240, 223, 0.32);
+}
+
+.price-guides {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.price-guide {
+    --x: 0%;
+    position: absolute;
+    left: var(--x);
+    top: 0;
+    bottom: 0;
+    width: 0;
+}
+
+.price-guide::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: 0;
+    bottom: 22px;
+    width: 2px;
+    background: rgba(244, 240, 223, 0.55);
+    box-shadow: 0 0 8px rgba(244, 240, 223, 0.24);
+}
+
+.price-guide::after {
+    content: "";
+    position: absolute;
+    left: -4px;
+    top: 0;
+    width: 8px;
+    height: 10px;
+    background: rgba(244, 240, 223, 0.9);
+    border-radius: 0 0 2px 2px;
+}
+
+.price-guide-100::before {
+    left: -2px;
+    width: 4px;
+    background: rgba(85, 214, 255, 0.95);
+    box-shadow: 0 0 10px rgba(85, 214, 255, 0.4);
+}
+
+.price-guide-100::after {
+    left: -5px;
+    width: 10px;
+    background: rgba(85, 214, 255, 1);
 }
 
 .price-markers {
@@ -553,11 +682,11 @@ h2 {
 }
 
 .legend-item {
-    min-height: 22px;
-    padding: 2px 8px;
+    min-height: 44px;
+    padding: 6px 12px;
     border: 1px solid rgba(244, 240, 223, 0.2);
     color: var(--muted);
-    font-size: 0.68rem;
+    font-size: 1.36rem;
     font-weight: 900;
     letter-spacing: 0.06em;
     text-transform: uppercase;
