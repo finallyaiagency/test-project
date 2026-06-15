@@ -1,10 +1,9 @@
 (function () {
-    const payload = window.FLIP_TRACKER_DATA || { headers: [], rows: [] };
-    const headers = payload.headers || [];
-    const rows = (payload.rows || []).map((row) => headers.reduce((record, header, index) => {
-        record[header] = row[index];
-        return record;
-    }, {}));
+    const FALLBACK_PAYLOAD = window.FLIP_TRACKER_DATA || { headers: [], rows: [] };
+    const LIVE_SHEET_ID = "12TELzT2bzIxdry3pyLvSv3hdWJpkdvGC25aSlvsBq94";
+    const LIVE_GID = "1754907543";
+    const LIVE_RANGE = "A1:AT1000";
+    const LIVE_URL = `https://docs.google.com/spreadsheets/d/${LIVE_SHEET_ID}/gviz/tq?gid=${LIVE_GID}&range=${LIVE_RANGE}&headers=1&tqx=out:json`;
 
     const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
     const number = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
@@ -31,16 +30,55 @@
         ["activity", "Buy / Sell Activity", null, false],
     ];
 
-    const items = rows.filter((row) => excelDate(row[COLS.buyDate]));
     const yearFilter = document.getElementById("year-filter");
     const categoryFilter = document.getElementById("category-filter");
     const traceControls = document.getElementById("trace-controls");
+    const sourceStatus = document.getElementById("source-status");
     const traceState = new Map(TRACE_DEFS.map(([key, , , enabled]) => [key, enabled]));
 
-    initControls();
-    render();
+    let headers = [];
+    let rows = [];
+    let items = [];
 
-    function initControls() {
+    rebuildModel(FALLBACK_PAYLOAD);
+    setSourceStatus("Embedded fallback export loaded");
+    initControls();
+    bindControls();
+    render();
+    void refreshFromLiveSheet();
+
+    function rebuildModel(payload) {
+        headers = payload.headers || [];
+        rows = (payload.rows || []).map((row) => headers.reduce((record, header, index) => {
+            record[header] = row[index];
+            return record;
+        }, {}));
+        items = rows.filter((row) => excelDate(row[COLS.buyDate]));
+    }
+
+    async function refreshFromLiveSheet() {
+        try {
+            const response = await fetch(LIVE_URL, { cache: "no-store" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const text = await response.text();
+            const start = text.indexOf("{");
+            const end = text.lastIndexOf("}");
+            if (start < 0 || end <= start) throw new Error("Unexpected sheet response");
+            const parsed = JSON.parse(text.slice(start, end + 1));
+            const table = parsed?.table;
+            if (!table?.cols?.length || !table?.rows?.length) throw new Error("No table rows");
+            const liveHeaders = table.cols.map((col, index) => (col.label || col.id || `Column ${index + 1}`).trim());
+            const liveRows = table.rows.map((row) => liveHeaders.map((_, index) => row.c?.[index]?.v ?? ""));
+            rebuildModel({ headers: liveHeaders, rows: liveRows });
+            setSourceStatus("Live from Ground B&B Store Google Sheet");
+            initControls(true);
+            render();
+        } catch (error) {
+            setSourceStatus(`Using embedded fallback export (${error.message})`);
+        }
+    }
+
+    function initControls(keepSelection = false) {
         const years = Array.from(new Set(items.flatMap((row) => [excelDate(row[COLS.buyDate]), excelDate(row[COLS.soldDate])])
             .filter(Boolean)
             .map((date) => date.getUTCFullYear()))).sort((a, b) => b - a);
@@ -54,7 +92,13 @@
                 <span>${escapeHtml(label)}</span>
             </label>
         `).join("");
+        if (keepSelection) {
+            if (![...yearFilter.options].some((opt) => opt.value === yearFilter.value)) yearFilter.value = "all";
+            if (![...categoryFilter.options].some((opt) => opt.value === categoryFilter.value)) categoryFilter.value = "all";
+        }
+    }
 
+    function bindControls() {
         yearFilter.addEventListener("change", render);
         categoryFilter.addEventListener("change", render);
         traceControls.addEventListener("change", (event) => {
@@ -171,12 +215,24 @@
         const avgDays = average(soldRows, "Days to sell");
         const inventoryCost = sum(inventoryRows, COLS.buyPrice);
         const roi = paid ? totalProfit / paid : 0;
+        const strongGo = soldRows.filter((row) => String(row[COLS.verdict] || "").toUpperCase().includes("STRONG")).length;
+        const caution = soldRows.filter((row) => String(row[COLS.verdict] || "").toUpperCase().includes("CAUTION")).length;
+        const noGo = soldRows.filter((row) => String(row[COLS.verdict] || "").toUpperCase().includes("NO")).length;
+        const avgProfit = average(soldRows, COLS.profit);
         setText("total-profit", money.format(totalProfit));
         setText("sales-revenue", money.format(salesRevenue));
         setText("sold-count", soldRows.length);
         setText("avg-days", number.format(avgDays));
         setText("inventory-cost", money.format(inventoryCost));
         setText("realized-roi", `${number.format(roi * 100)}%`);
+        setText("avg-profit", money.format(avgProfit));
+        setText("strong-go-count", strongGo);
+        setText("caution-count", caution);
+        setText("no-go-count", noGo);
+    }
+
+    function setSourceStatus(text) {
+        if (sourceStatus) sourceStatus.textContent = text;
     }
 
     function renderPlotly(source) {
@@ -292,9 +348,25 @@
 
     function excelDate(value) {
         if (!value) return null;
-        if (typeof value === "string" && value.includes("-")) {
-            const parsed = new Date(value);
-            return Number.isNaN(parsed.valueOf()) ? null : parsed;
+        if (typeof value === "string") {
+            const trimmed = value.trim();
+            if (!trimmed) return null;
+            const parsed = new Date(trimmed);
+            if (!Number.isNaN(parsed.valueOf())) {
+                return parsed;
+            }
+            const mdy = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (mdy) {
+                const month = Number(mdy[1]) - 1;
+                const day = Number(mdy[2]);
+                const year = Number(mdy[3]);
+                const date = new Date(Date.UTC(year, month, day));
+                return Number.isNaN(date.valueOf()) ? null : date;
+            }
+            if (trimmed.includes("-")) {
+                const iso = new Date(trimmed);
+                return Number.isNaN(iso.valueOf()) ? null : iso;
+            }
         }
         const serial = Number(value);
         if (!Number.isFinite(serial)) return null;
