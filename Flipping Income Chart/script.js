@@ -214,6 +214,13 @@
     }
 
     function renderPlotly(source) {
+        if (typeof Plotly === "undefined") {
+            const chart = document.getElementById("income-chart");
+            if (chart) {
+                chart.innerHTML = '<div class="empty-state">Chart renderer unavailable in this browser.</div>';
+            }
+            return;
+        }
         const data = TRACE_DEFS
             .filter(([key]) => traceState.get(key))
             .map(([key, label, axis]) => key === "activity" ? activityTrace(source) : lineTrace(source, key, label, axis));
