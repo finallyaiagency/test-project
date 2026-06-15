@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flipping Income Chart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/Flipping%20Income%20Chart/styles.css?v=20260615-1">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+    <header class="top-header">
+        <nav class="header-nav" aria-label="Main menu">
+            <a class="header-link" href="/hello-world.html">F1 Wind Tunnel</a>
+            <a class="header-link" href="/joke-dashboard.html">Joke Dashboard</a>
+            <a class="header-link" href="/flip-tracker.html">Flip Tracker</a>
+            <a class="header-link active" href="/income-chart">Income Chart</a>
+            <a class="header-link" href="https://www.perplexity.ai/computer/a/lake-norman-dashboard-hpEeo1IDQGuNEaWQGlTd8g" target="_blank" rel="noopener noreferrer">Lake Norman Dashboard</a>
+            <a class="header-link" href="https://welday-ent-dashboard.lovable.app/" target="_blank" rel="noopener noreferrer">Welday Enterprises</a>
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        <section class="hero">
+            <div>
+                <span class="eyebrow">Groundbnb resale operations</span>
+                <h1>Flipping Income Chart</h1>
+                <p>Profit, revenue, inventory, and sell-through performance from the separate flipping income sheet.</p>
+                <p class="source-status" id="source-status">Embedded fallback export loaded</p>
+            </div>
+            <div class="source-note">
+                <span>Source</span>
+                <strong>Google Sheet Data tab</strong>
+            </div>
+        </section>
+
+        <section class="kpi-grid" aria-label="Income summary">
+            <article class="kpi kpi-go"><span>Total Profit</span><strong id="total-profit">$0</strong></article>
+            <article class="kpi kpi-cyan"><span>Sales Revenue</span><strong id="sales-revenue">$0</strong></article>
+            <article class="kpi kpi-amber"><span>Sold Items</span><strong id="sold-count">0</strong></article>
+            <article class="kpi kpi-info"><span>Avg Days to Sell</span><strong id="avg-days">0</strong></article>
+            <article class="kpi kpi-slate"><span>Inventory Cost</span><strong id="inventory-cost">$0</strong></article>
+            <article class="kpi kpi-danger"><span>Realized ROI</span><strong id="realized-roi">0%</strong></article>
+        </section>
+
+        <section class="kpi-expander" aria-label="Additional income KPIs">
+            <details>
+                <summary>More KPIs</summary>
+                <div class="secondary-kpis">
+                    <article class="kpi kpi-go"><span>Average Profit</span><strong id="avg-profit">$0</strong></article>
+                    <article class="kpi kpi-cyan"><span>Strong GO</span><strong id="strong-go-count">0</strong></article>
+                    <article class="kpi kpi-amber"><span>Caution</span><strong id="caution-count">0</strong></article>
+                    <article class="kpi kpi-danger"><span>No-Go</span><strong id="no-go-count">0</strong></article>
+                    <article class="kpi kpi-slate"><span>Inventory Count</span><strong id="inventory-count">0</strong></article>
+                    <article class="kpi kpi-info"><span>Sold Count</span><strong id="sold-count-secondary">0</strong></article>
+                </div>
+            </details>
+        </section>
+
+        <section class="panel chart-panel">
+            <div class="panel-heading">
+                <div>
+                    <span class="eyebrow">Monthly activity</span>
+                    <h2>Inventory value, cash, total equity, and avg item value</h2>
+                </div>
+                <div class="filters">
+                    <label>
+                        <span>Year</span>
+                        <select id="year-filter" aria-label="Filter by year"></select>
+                    </label>
+                    <label>
+                        <span>Category</span>
+                        <select id="category-filter" aria-label="Filter by category"></select>
+                    </label>
+                </div>
+            </div>
+            <div id="trace-controls" class="trace-controls" aria-label="Chart trace selectors"></div>
+            <div id="income-chart" class="plotly-chart" aria-label="Inventory value and cash chart"></div>
+        </section>
+
+        <section class="split-grid">
+            <article class="panel">
+                <div class="panel-heading">
+                    <div>
+                        <span class="eyebrow">Category mix</span>
+                        <h2>Profit by type</h2>
+                    </div>
+                </div>
+                <div id="type-bars" class="bar-list"></div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-heading">
+                    <div>
+                        <span class="eyebrow">Open capital</span>
+                        <h2>Current inventory</h2>
+                    </div>
+                </div>
+                <div id="inventory-list" class="inventory-list"></div>
+            </article>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <div>
+                    <span class="eyebrow">Latest closed flips</span>
+                    <h2>Recent sales</h2>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date Sold</th>
+                            <th>Item</th>
+                            <th>Type</th>
+                            <th>Paid</th>
+                            <th>Sale</th>
+                            <th>Profit</th>
+                            <th>Days</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-sales"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="/Flipping%20Income%20Chart/data.js?v=20260615-1"></script>
+    <script src="/Flipping%20Income%20Chart/script.js?v=20260615-1"></script>
+</body>
+</html>

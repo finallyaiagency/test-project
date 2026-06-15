@@ -4,6 +4,10 @@
     {
       "source": "/",
       "destination": "/flip-tracker"
+    },
+    {
+      "source": "/income-chart",
+      "destination": "/income-chart.html"
     }
   ]
 }
