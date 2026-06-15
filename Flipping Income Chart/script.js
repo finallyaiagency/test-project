@@ -1,5 +1,9 @@
 (function () {
     const FALLBACK_PAYLOAD = window.FLIP_TRACKER_DATA || { headers: [], rows: [] };
+    const LIVE_SHEET_ID = "12TELzT2bzIxdry3pyLvSv3hdWJpkdvGC25aSlvsBq94";
+    const LIVE_GID = "1754907543";
+    const LIVE_RANGE = "A1:AT1000";
+    const LIVE_URL = `https://docs.google.com/spreadsheets/d/${LIVE_SHEET_ID}/gviz/tq?gid=${LIVE_GID}&range=${LIVE_RANGE}&headers=1&tqx=out:json`;
 
     const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
     const number = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
@@ -37,10 +41,11 @@
     let items = [];
 
     rebuildModel(FALLBACK_PAYLOAD);
-    setSourceStatus(`Loaded from sheet ${FALLBACK_PAYLOAD.sourceSheetId || "unknown"} · exported ${formatExportedAt(FALLBACK_PAYLOAD.exportedAt)}`);
+    setSourceStatus("Embedded fallback export loaded");
     initControls();
     bindControls();
     render();
+    void refreshFromLiveSheet();
 
     function rebuildModel(payload) {
         headers = payload.headers || [];
@@ -51,7 +56,29 @@
         items = rows.filter((row) => excelDate(row[COLS.buyDate]));
     }
 
-    function initControls() {
+    async function refreshFromLiveSheet() {
+        try {
+            const response = await fetch(LIVE_URL, { cache: "no-store" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const text = await response.text();
+            const start = text.indexOf("{");
+            const end = text.lastIndexOf("}");
+            if (start < 0 || end <= start) throw new Error("Unexpected sheet response");
+            const parsed = JSON.parse(text.slice(start, end + 1));
+            const table = parsed?.table;
+            if (!table?.cols?.length || !table?.rows?.length) throw new Error("No table rows");
+            const liveHeaders = table.cols.map((col, index) => (col.label || col.id || `Column ${index + 1}`).trim());
+            const liveRows = table.rows.map((row) => liveHeaders.map((_, index) => row.c?.[index]?.v ?? ""));
+            rebuildModel({ headers: liveHeaders, rows: liveRows });
+            setSourceStatus("Live from Ground B&B Store Google Sheet");
+            initControls(true);
+            render();
+        } catch (error) {
+            setSourceStatus(`Using embedded fallback export (${error.message})`);
+        }
+    }
+
+    function initControls(keepSelection = false) {
         const years = Array.from(new Set(items.flatMap((row) => [excelDate(row[COLS.buyDate]), excelDate(row[COLS.soldDate])])
             .filter(Boolean)
             .map((date) => date.getUTCFullYear()))).sort((a, b) => b - a);
@@ -65,6 +92,10 @@
                 <span>${escapeHtml(label)}</span>
             </label>
         `).join("");
+        if (keepSelection) {
+            if (![...yearFilter.options].some((opt) => opt.value === yearFilter.value)) yearFilter.value = "all";
+            if (![...categoryFilter.options].some((opt) => opt.value === categoryFilter.value)) categoryFilter.value = "all";
+        }
     }
 
     function bindControls() {
@@ -188,7 +219,6 @@
         const caution = soldRows.filter((row) => String(row[COLS.verdict] || "").toUpperCase().includes("CAUTION")).length;
         const noGo = soldRows.filter((row) => String(row[COLS.verdict] || "").toUpperCase().includes("NO")).length;
         const avgProfit = average(soldRows, COLS.profit);
-        const inventoryCount = inventoryRows.length;
         setText("total-profit", money.format(totalProfit));
         setText("sales-revenue", money.format(salesRevenue));
         setText("sold-count", soldRows.length);
@@ -199,28 +229,13 @@
         setText("strong-go-count", strongGo);
         setText("caution-count", caution);
         setText("no-go-count", noGo);
-        setText("inventory-count", inventoryCount);
-        setText("sold-count-secondary", soldRows.length);
     }
 
     function setSourceStatus(text) {
         if (sourceStatus) sourceStatus.textContent = text;
     }
 
-    function formatExportedAt(value) {
-        if (!value) return "unknown time";
-        const parsed = new Date(value);
-        return Number.isNaN(parsed.valueOf()) ? String(value) : parsed.toLocaleString();
-    }
-
     function renderPlotly(source) {
-        if (typeof Plotly === "undefined") {
-            const chart = document.getElementById("income-chart");
-            if (chart) {
-                chart.innerHTML = '<div class="empty-state">Chart renderer unavailable in this browser.</div>';
-            }
-            return;
-        }
         const data = TRACE_DEFS
             .filter(([key]) => traceState.get(key))
             .map(([key, label, axis]) => key === "activity" ? activityTrace(source) : lineTrace(source, key, label, axis));
