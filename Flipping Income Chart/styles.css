@@ -87,6 +87,7 @@ select {
 
 .eyebrow,
 .source-note span,
+.source-status,
 .kpi span,
 .filters span {
     display: block;
@@ -143,6 +144,12 @@ h2 {
     margin-top: 7px;
     color: var(--hud);
 }
+.source-status {
+    margin-top: 10px;
+    color: var(--cyan);
+    letter-spacing: 0.03em;
+    text-transform: none;
+}
 
 .kpi-grid {
     margin: 18px 0;
@@ -155,6 +162,7 @@ h2 {
     min-height: 72px;
     padding: 13px;
     background: rgba(16, 20, 17, 0.64);
+    cursor: help;
 }
 
 .kpi strong {
@@ -163,6 +171,92 @@ h2 {
     color: var(--hud);
     font-size: clamp(1.05rem, 1.5vw, 1.45rem);
     line-height: 1;
+}
+
+.kpi-primary {
+    border-color: rgba(66, 245, 167, 0.5);
+    background:
+        linear-gradient(180deg, rgba(66, 245, 167, 0.20), rgba(66, 245, 167, 0.10)),
+        rgba(16, 20, 17, 0.82);
+    box-shadow: inset 0 0 0 1px rgba(66, 245, 167, 0.18);
+}
+
+.kpi-go {
+    border-color: rgba(66, 245, 167, 0.34);
+    background:
+        linear-gradient(180deg, rgba(66, 245, 167, 0.13), rgba(66, 245, 167, 0.06)),
+        rgba(16, 20, 17, 0.78);
+    box-shadow: inset 0 0 0 1px rgba(66, 245, 167, 0.14);
+}
+
+.kpi-cyan {
+    border-color: rgba(85, 214, 255, 0.34);
+    background:
+        linear-gradient(180deg, rgba(85, 214, 255, 0.12), rgba(85, 214, 255, 0.05)),
+        rgba(16, 20, 17, 0.78);
+    box-shadow: inset 0 0 0 1px rgba(85, 214, 255, 0.14);
+}
+
+.kpi-amber {
+    border-color: rgba(255, 184, 74, 0.34);
+    background:
+        linear-gradient(180deg, rgba(255, 184, 74, 0.12), rgba(255, 184, 74, 0.05)),
+        rgba(16, 20, 17, 0.78);
+    box-shadow: inset 0 0 0 1px rgba(255, 184, 74, 0.14);
+}
+
+.kpi-danger {
+    border-color: rgba(255, 77, 90, 0.34);
+    background:
+        linear-gradient(180deg, rgba(255, 77, 90, 0.13), rgba(255, 77, 90, 0.05)),
+        rgba(16, 20, 17, 0.78);
+    box-shadow: inset 0 0 0 1px rgba(255, 77, 90, 0.14);
+}
+
+.kpi-info {
+    border-color: rgba(199, 188, 255, 0.3);
+    background:
+        linear-gradient(180deg, rgba(199, 188, 255, 0.12), rgba(199, 188, 255, 0.05)),
+        rgba(16, 20, 17, 0.78);
+    box-shadow: inset 0 0 0 1px rgba(199, 188, 255, 0.12);
+}
+
+.kpi-slate {
+    border-color: rgba(129, 139, 146, 0.4);
+    background:
+        linear-gradient(180deg, rgba(129, 139, 146, 0.12), rgba(129, 139, 146, 0.05)),
+        rgba(16, 20, 17, 0.78);
+    box-shadow: inset 0 0 0 1px rgba(129, 139, 146, 0.12);
+}
+
+.kpi-expander {
+    margin: 18px 0 12px;
+}
+
+.kpi-expander details {
+    border: 1px solid var(--line);
+    background: rgba(16, 20, 17, 0.48);
+    padding: 12px 14px 14px;
+}
+
+.kpi-expander summary {
+    cursor: pointer;
+    list-style: none;
+    color: var(--hud);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+}
+
+.kpi-expander summary::-webkit-details-marker {
+    display: none;
+}
+
+.secondary-kpis {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
 }
 
 .panel {
@@ -201,6 +295,89 @@ select:focus {
     border-color: var(--hud);
     outline: none;
     box-shadow: 0 0 0 2px rgba(66, 245, 167, 0.12);
+}
+
+.multi-filter {
+    position: relative;
+    min-width: 220px;
+}
+
+.multi-filter-button {
+    width: 100%;
+    height: 42px;
+    margin-top: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid rgba(244, 240, 223, 0.2);
+    border-radius: 0;
+    color: var(--ink);
+    background: rgba(9, 13, 11, 0.92);
+    padding: 0 11px;
+    cursor: pointer;
+}
+
+.multi-filter-button:focus {
+    border-color: var(--hud);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(66, 245, 167, 0.12);
+}
+
+.multi-filter-caret {
+    color: var(--muted);
+}
+
+.multi-filter-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 30;
+    width: min(320px, 90vw);
+    max-height: 360px;
+    overflow: auto;
+    border: 1px solid rgba(244, 240, 223, 0.18);
+    background: rgba(9, 13, 11, 0.98);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+    padding: 10px;
+}
+
+.multi-filter-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.multi-filter-actions button {
+    flex: 1;
+    height: 34px;
+    border: 1px solid rgba(244, 240, 223, 0.18);
+    background: rgba(16, 20, 17, 0.75);
+    color: var(--ink);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+}
+
+.multi-filter-options {
+    display: grid;
+    gap: 6px;
+}
+
+.multi-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid rgba(244, 240, 223, 0.12);
+    background: rgba(16, 20, 17, 0.36);
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.multi-filter-option input {
+    margin: 0;
 }
 
 .trace-controls {
@@ -300,8 +477,51 @@ select:focus {
     font-size: 0.9rem;
 }
 
-.inventory-item b {
+
+.inventory-prices {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    min-width: 220px;
+}
+
+.inventory-prices div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: flex-start;
+}
+
+.inventory-prices span {
+    color: var(--muted);
+    font-size: 0.73rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.inventory-prices b {
+    color: var(--ink);
+    font-size: 0.98rem;
+}.inventory-item b {
     color: var(--hud);
+}
+
+.list-expander {
+    margin-top: 10px;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+}
+
+.list-expander summary {
+    cursor: pointer;
+    color: var(--hud);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.list-expander summary::-webkit-details-marker {
+    display: none;
 }
 
 .table-wrap {
@@ -354,6 +574,10 @@ td:nth-child(6) {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .secondary-kpis {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .panel-heading {
         align-items: stretch;
         flex-direction: column;
@@ -381,6 +605,10 @@ td:nth-child(6) {
     }
 
     .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .secondary-kpis {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
