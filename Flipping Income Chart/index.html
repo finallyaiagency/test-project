@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260601-1">
+    <link rel="stylesheet" href="styles.css?v=20260616-2">
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 </head>
 <body>
@@ -94,6 +94,20 @@
                         </button>
                         <div id="category-filter-panel" class="multi-filter-panel" hidden></div>
                     </div>
+                    <label class="range-filter">
+                        <span>Paid min/max</span>
+                        <div class="range-inputs">
+                            <input id="paid-min-filter" type="number" inputmode="decimal" placeholder="Min paid" aria-label="Minimum price paid">
+                            <input id="paid-max-filter" type="number" inputmode="decimal" placeholder="Max paid" aria-label="Maximum price paid">
+                        </div>
+                    </label>
+                    <label class="range-filter">
+                        <span>Sold min/max</span>
+                        <div class="range-inputs">
+                            <input id="sold-min-filter" type="number" inputmode="decimal" placeholder="Min sold" aria-label="Minimum sale price">
+                            <input id="sold-max-filter" type="number" inputmode="decimal" placeholder="Max sold" aria-label="Maximum sale price">
+                        </div>
+                    </label>
                 </div>
             </div>
             <div id="trace-controls" class="trace-controls" aria-label="Chart trace selectors"></div>
@@ -174,6 +188,6 @@
     </main>
 
     <script src="data.js?v=20260616-1"></script>
-    <script src="script.js?v=20260616-1"></script>
+    <script src="script.js?v=20260616-2"></script>
 </body>
 </html>

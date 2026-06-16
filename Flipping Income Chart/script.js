@@ -73,11 +73,21 @@
     const categoryFilterButton = document.getElementById("category-filter-button");
     const categoryFilterPanel = document.getElementById("category-filter-panel");
     const categoryFilterLabel = document.getElementById("category-filter-label");
+    const paidMinFilter = document.getElementById("paid-min-filter");
+    const paidMaxFilter = document.getElementById("paid-max-filter");
+    const soldMinFilter = document.getElementById("sold-min-filter");
+    const soldMaxFilter = document.getElementById("sold-max-filter");
     const traceControls = document.getElementById("trace-controls");
     const sourceStatus = document.getElementById("source-status");
     const traceState = new Map(TRACE_DEFS.map(([key, , , enabled]) => [key, enabled]));
     const yearState = new Map();
     const categoryState = new Map();
+    const priceRangeState = {
+        paidMin: "",
+        paidMax: "",
+        soldMin: "",
+        soldMax: "",
+    };
 
     let headers = [];
     let rows = [];
@@ -294,6 +304,7 @@
         }
         syncYearFilterLabel();
         syncCategoryFilterLabel();
+        syncPriceFilterInputs();
     }
 
     function bindControls() {
@@ -303,6 +314,16 @@
         if (categoryFilterButton) {
             categoryFilterButton.addEventListener("click", () => toggleCategoryFilterPanel());
         }
+        [paidMinFilter, paidMaxFilter, soldMinFilter, soldMaxFilter].forEach((input, index) => {
+            if (!input) return;
+            input.addEventListener("input", () => {
+                if (index === 0) priceRangeState.paidMin = input.value;
+                if (index === 1) priceRangeState.paidMax = input.value;
+                if (index === 2) priceRangeState.soldMin = input.value;
+                if (index === 3) priceRangeState.soldMax = input.value;
+                render();
+            });
+        });
         document.addEventListener("click", (event) => {
             if (!yearFilterWrap?.contains(event.target)) closeYearFilterPanel();
             if (!categoryFilterWrap?.contains(event.target)) closeCategoryFilterPanel();
@@ -324,12 +345,20 @@
     function filteredItems() {
         const selectedYears = getSelectedYears();
         const selectedCategories = getSelectedCategories();
+        const paidMin = toNullableNumber(priceRangeState.paidMin);
+        const paidMax = toNullableNumber(priceRangeState.paidMax);
+        const soldMin = toNullableNumber(priceRangeState.soldMin);
+        const soldMax = toNullableNumber(priceRangeState.soldMax);
         return items.filter((row) => {
             const buyDate = excelDate(row[COLS.buyDate]);
             const soldDate = excelDate(row[COLS.soldDate]);
             const matchesYear = !selectedYears.length || [buyDate, soldDate].some((date) => date && selectedYears.includes(String(date.getUTCFullYear())));
             const matchesCategory = !selectedCategories.length || selectedCategories.includes(row[COLS.type] || "Other");
-            return matchesYear && matchesCategory;
+            const paid = toNumber(row[COLS.buyPrice]);
+            const sold = toNumber(row[COLS.soldPrice]);
+            const matchesPaid = (paidMin == null || paid >= paidMin) && (paidMax == null || paid <= paidMax);
+            const matchesSold = (soldMin == null || sold >= soldMin) && (soldMax == null || sold <= soldMax);
+            return matchesYear && matchesCategory && matchesPaid && matchesSold;
         });
     }
 
@@ -553,12 +582,26 @@
         });
     }
 
+    function syncPriceFilterInputs() {
+        if (paidMinFilter) paidMinFilter.value = priceRangeState.paidMin;
+        if (paidMaxFilter) paidMaxFilter.value = priceRangeState.paidMax;
+        if (soldMinFilter) soldMinFilter.value = priceRangeState.soldMin;
+        if (soldMaxFilter) soldMaxFilter.value = priceRangeState.soldMax;
+    }
+
     function getSelectedCategories() {
         return Array.from(categoryState.entries()).filter(([, enabled]) => enabled).map(([type]) => type);
     }
 
     function getSelectedYears() {
         return Array.from(yearState.entries()).filter(([, enabled]) => enabled).map(([year]) => year);
+    }
+
+    function toNullableNumber(value) {
+        const text = String(value ?? "").trim();
+        if (!text) return null;
+        const numeric = Number(text);
+        return Number.isFinite(numeric) ? numeric : null;
     }
 
     function allYearsSelected() {
