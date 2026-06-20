@@ -478,10 +478,17 @@
         const paidSoldRows = soldRows.filter((row) => toNumber(row[COLS.buyPrice]) > 0);
         const freeSoldUnits = freeSoldRows.length;
         const annualizedReturn = annualizedReturnOnCapital(paidSoldRows);
-        const profitPerDay = soldRows.length ? totalProfit / Math.max(1, sum(soldRows, COLS.daysToSell)) : 0;
+        const paidSoldProfit = sum(paidSoldRows, COLS.profit);
+        const profitPerDay = paidSoldRows.length
+            ? paidSoldProfit / Math.max(1, sum(paidSoldRows, COLS.daysToSell))
+            : 0;
         const daysInInventory = average(inventoryRows, COLS.daysHeld);
         const inventoryTurnover = inventoryCost ? salesRevenue / inventoryCost : 0;
         const zeroCostShare = soldUnits ? freeSoldUnits / soldUnits : 0;
+        const avgPaidVsSellerAsking = averageRatio(soldRows, COLS.buyPrice, COLS.asking);
+        const avgSavingsVsSellerAsking = 1 - avgPaidVsSellerAsking;
+        const activeAvgPaidVsSellerAsking = averageRatio(inventoryRows, COLS.buyPrice, COLS.asking);
+        const activeAvgSavingsVsSellerAsking = 1 - activeAvgPaidVsSellerAsking;
 
         setText("total-profit", money.format(totalProfit));
         setText("gross-margin", formatRatio(grossMargin));
@@ -507,6 +514,10 @@
         setText("avg-markup", formatRatio(avgMarkup));
         setText("marketplace-ads", marketplaceAds ? number.format(marketplaceAds) : "n/a");
         setText("ad-gap", adGap ? number.format(adGap) : "n/a");
+        setText("avg-paid-percent-seller-asking", formatRatio(avgPaidVsSellerAsking));
+        setText("avg-savings-vs-seller-asking", formatRatio(avgSavingsVsSellerAsking));
+        setText("active-avg-paid-percent-seller-asking", formatRatio(activeAvgPaidVsSellerAsking));
+        setText("active-avg-savings-vs-seller-asking", formatRatio(activeAvgSavingsVsSellerAsking));
     }
 
     function renderCategoryFilter(categories) {
@@ -747,19 +758,58 @@
     }
 
     function renderTypeBars(records) {
+        const chart = document.getElementById("type-bars");
+        if (!window.Plotly) {
+            chart.innerHTML = "<p>Chart library did not load.</p>";
+            return;
+        }
         const byType = new Map();
         records.forEach((row) => {
             const type = row[COLS.type] || "Other";
-            byType.set(type, (byType.get(type) || 0) + toNumber(row[COLS.profit]));
+            const profit = toNumber(row[COLS.profit]);
+            const days = Math.max(1, toNumber(row[COLS.daysToSell]));
+            const bucket = byType.get(type) || { profit: 0, days: 0, count: 0 };
+            bucket.profit += profit;
+            bucket.days += days;
+            bucket.count += 1;
+            byType.set(type, bucket);
         });
-        const sorted = Array.from(byType.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
-        const max = Math.max(1, ...sorted.map((entry) => Math.abs(entry[1])));
-        document.getElementById("type-bars").innerHTML = sorted.map(([type, profit]) => `
-            <div class="bar-row">
-                <header><span>${escapeHtml(type)}</span><strong>${money.format(profit)}</strong></header>
-                <div class="bar-track"><div class="bar-fill" style="width: ${Math.max(3, Math.abs(profit) / max * 100)}%"></div></div>
-            </div>
-        `).join("") || "<p>No closed sales match the selected filters.</p>";
+        const sorted = Array.from(byType.entries())
+            .map(([type, stats]) => ({
+                type,
+                profit: stats.profit,
+                days: stats.days,
+                count: stats.count,
+                rate: stats.profit / Math.max(1, stats.days),
+            }))
+            .sort((a, b) => b.rate - a.rate);
+        if (!sorted.length) {
+            chart.innerHTML = "<p>No closed sales match the selected filters.</p>";
+            return;
+        }
+        Plotly.react("type-bars", [
+            {
+                type: "bar",
+                orientation: "h",
+                y: sorted.map((row) => row.type),
+                x: sorted.map((row) => row.rate),
+                text: sorted.map((row) => `${money.format(row.profit)} profit · ${number.format(row.days)} days · ${row.count} items`),
+                textposition: "auto",
+                marker: {
+                    color: sorted.map((row, index) => index === 0 ? "#42f5a7" : index === sorted.length - 1 ? "#ffb84a" : "#55d6ff"),
+                },
+                hovertemplate: "%{y}<br>Profit per day: $%{x:.2f}<br>%{text}<extra></extra>",
+            },
+        ], {
+            title: { text: "Category profit per day" },
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "rgba(0,0,0,0)",
+            font: { family: "Outfit, sans-serif", color: "#f4f0df" },
+            margin: { l: 120, r: 24, t: 56, b: 40 },
+            xaxis: { title: "Profit per day ($)", gridcolor: "rgba(244,240,223,0.10)", zerolinecolor: "rgba(244,240,223,0.18)" },
+            yaxis: { automargin: true, gridcolor: "rgba(244,240,223,0.06)" },
+            showlegend: false,
+        }, { responsive: true, displaylogo: false });
     }
 
     function renderInventory(inventoryRows) {
@@ -948,6 +998,17 @@
 
     function average(records, key) {
         const values = records.map((row) => toNumber(row[key])).filter((value) => value > 0);
+        return values.length ? values.reduce((total, value) => total + value, 0) / values.length : 0;
+    }
+
+    function averageRatio(records, numeratorKey, denominatorKey) {
+        const values = records
+            .map((row) => {
+                const denominator = toNumber(row[denominatorKey]);
+                const numerator = toNumber(row[numeratorKey]);
+                return denominator > 0 ? numerator / denominator : null;
+            })
+            .filter((value) => value != null && Number.isFinite(value));
         return values.length ? values.reduce((total, value) => total + value, 0) / values.length : 0;
     }
 

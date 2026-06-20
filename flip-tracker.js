@@ -76,7 +76,30 @@
         sellBand: document.getElementById("sell-band"),
         priceGuides: document.getElementById("price-guides"),
         priceMarkers: document.getElementById("price-markers"),
-        priceLegend: document.getElementById("price-scale-legend")
+        priceLegend: document.getElementById("price-scale-legend"),
+        cockpitFile: document.getElementById("cockpit-file-input"),
+        cockpitFileLabel: document.getElementById("cockpit-file-label"),
+        cockpitPreview: document.getElementById("cockpit-preview"),
+        cockpitItemName: document.getElementById("cockpit-item-name"),
+        cockpitCategory: document.getElementById("cockpit-category"),
+        cockpitSellerAsk: document.getElementById("cockpit-seller-ask"),
+        cockpitRetail: document.getElementById("cockpit-retail"),
+        cockpitUsedLow: document.getElementById("cockpit-used-low"),
+        cockpitUsedMedian: document.getElementById("cockpit-used-median"),
+        cockpitUsedHigh: document.getElementById("cockpit-used-high"),
+        cockpitCondition: document.getElementById("cockpit-condition"),
+        cockpitStorage: document.getElementById("cockpit-storage"),
+        cockpitRecommendation: document.getElementById("cockpit-recommendation"),
+        cockpitMaxPay: document.getElementById("cockpit-max-pay"),
+        cockpitBestAsk: document.getElementById("cockpit-best-ask"),
+        cockpitAcceptFloor: document.getElementById("cockpit-accept-floor"),
+        cockpitProfit: document.getElementById("cockpit-profit"),
+        cockpitRoi: document.getElementById("cockpit-roi"),
+        cockpitConfidence: document.getElementById("cockpit-confidence"),
+        cockpitPersonalFit: document.getElementById("cockpit-personal-fit"),
+        cockpitRiskNotes: document.getElementById("cockpit-risk-notes"),
+        useSelectedRecord: document.getElementById("use-selected-record"),
+        copyCockpitPrompt: document.getElementById("copy-cockpit-prompt")
     };
 
     function get(values, key) {
@@ -494,6 +517,124 @@
         render();
     }
 
+    function selectedRecord() {
+        return state.filtered.find((item) => item.id === state.selectedId) || records.find((item) => item.id === state.selectedId) || null;
+    }
+
+    function numFromInput(element) {
+        const numeric = Number(element?.value || 0);
+        return Number.isFinite(numeric) ? numeric : 0;
+    }
+
+    function setInputValue(element, value) {
+        if (!element || value == null || Number.isNaN(value)) return;
+        element.value = String(Math.round(value));
+    }
+
+    function personalUseFit(category) {
+        const lower = String(category || "").toLowerCase();
+        if (/solar|power|battery|charger|generator|inverter|camp|emergency/.test(lower)) return "Possible personal use";
+        if (/kayak|paddle|sup|board/.test(lower)) return "Resale only";
+        if (/car|vehicle|cadillac|auto/.test(lower)) return "Unload / not a flip";
+        return "Review";
+    }
+
+    function storagePenalty(storage) {
+        const lower = String(storage || "").toLowerCase();
+        if (lower.includes("very")) return 0.16;
+        if (lower.includes("high")) return 0.1;
+        if (lower.includes("medium")) return 0.05;
+        return 0;
+    }
+
+    function analyzeCockpitCandidate() {
+        if (!els.cockpitRecommendation) return;
+        const sellerAsk = numFromInput(els.cockpitSellerAsk);
+        const retail = numFromInput(els.cockpitRetail);
+        const usedLow = numFromInput(els.cockpitUsedLow);
+        const usedMedian = numFromInput(els.cockpitUsedMedian);
+        const usedHigh = numFromInput(els.cockpitUsedHigh);
+        const condition = Math.max(1, Math.min(10, numFromInput(els.cockpitCondition) || 7));
+        const category = els.cockpitCategory.value;
+        const storage = els.cockpitStorage.value;
+        const compAnchor = usedMedian || usedHigh || usedLow || retail * 0.65 || sellerAsk;
+        const conditionFactor = 0.82 + ((condition - 5) * 0.035);
+        const burden = storagePenalty(storage);
+        const bestAsk = Math.max(0, compAnchor * conditionFactor * (1 - burden));
+        const acceptFloor = Math.max(0, Math.min(bestAsk * 0.82, usedLow || bestAsk * 0.82));
+        const quickSale = Math.max(0, acceptFloor * 0.92);
+        const targetCosts = Math.max(10, bestAsk * 0.08);
+        const targetProfit = Math.max(35, bestAsk * 0.28);
+        const maxPay = Math.max(0, acceptFloor - targetCosts - targetProfit);
+        const expectedProfit = Math.max(0, acceptFloor - sellerAsk - targetCosts);
+        const roi = sellerAsk > 0 ? (expectedProfit / sellerAsk) * 100 : 0;
+        const spread = sellerAsk > 0 ? (maxPay - sellerAsk) / sellerAsk : 0;
+        let verdict = "PASS";
+        if (sellerAsk <= maxPay && roi >= 45) verdict = "BUY";
+        else if (sellerAsk <= maxPay * 1.12 && roi >= 25) verdict = "MAYBE / NEGOTIATE";
+        else if (personalUseFit(category).includes("Possible")) verdict = "PERSONAL USE ONLY UNLESS CHEAPER";
+
+        const confidence = [usedLow, usedMedian, usedHigh, retail].filter((value) => value > 0).length;
+        const notes = [];
+        if (sellerAsk > maxPay) notes.push(`Seller ask is ${money(sellerAsk - maxPay)} above target max pay.`);
+        if (storagePenalty(storage) >= 0.1) notes.push("Bulky storage burden: require a bigger margin or faster sale.");
+        if (retail && bestAsk > retail * 0.9) notes.push("Used asking estimate is close to new retail; verify comps before buying.");
+        if (personalUseFit(category).includes("Unload")) notes.push("Treat as unload/personal asset, not flip-profit inventory.");
+        notes.push(`Quick-sale target: ${money(quickSale)}.`);
+
+        els.cockpitRecommendation.textContent = verdict;
+        els.cockpitMaxPay.textContent = money(maxPay);
+        els.cockpitBestAsk.textContent = money(bestAsk);
+        els.cockpitAcceptFloor.textContent = money(acceptFloor);
+        els.cockpitProfit.textContent = money(expectedProfit);
+        els.cockpitRoi.textContent = `ROI ${pct(roi)}`;
+        els.cockpitConfidence.textContent = `Confidence ${confidence >= 3 ? "Medium/High" : "Low"}`;
+        els.cockpitPersonalFit.textContent = `Personal fit ${personalUseFit(category)}`;
+        els.cockpitRiskNotes.innerHTML = notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("");
+    }
+
+    function loadSelectedRecordIntoCockpit() {
+        const record = selectedRecord();
+        if (!record) return;
+        els.cockpitItemName.value = record.title || "";
+        els.cockpitCategory.value = getAny(record.values, ["Category", "Type"]) || "Review";
+        setInputValue(els.cockpitSellerAsk, record.ask);
+        setInputValue(els.cockpitRetail, record.newEstimate || record.listPrice);
+        setInputValue(els.cockpitUsedMedian, record.acceptPrice || record.listPrice || record.ask);
+        setInputValue(els.cockpitUsedLow, record.maxBuy || record.openingOffer);
+        setInputValue(els.cockpitUsedHigh, record.newEstimate || record.listPrice || record.ask);
+        const condition = getAny(record.values, ["Condition Stated", "Condition", "Condition From Photos"]);
+        els.cockpitCondition.value = /new/i.test(condition) ? "9" : /fair|parts|repair/i.test(condition) ? "5" : "7";
+        analyzeCockpitCandidate();
+    }
+
+    function cockpitPrompt() {
+        return [
+            "Evaluate this local flipping opportunity from the attached screenshot/photo/PDF.",
+            `Item/OCR note: ${els.cockpitItemName.value}`,
+            `Category: ${els.cockpitCategory.value}`,
+            `Seller ask: $${els.cockpitSellerAsk.value}`,
+            `New retail: $${els.cockpitRetail.value}`,
+            `Used comps low/median/high: $${els.cockpitUsedLow.value} / $${els.cockpitUsedMedian.value} / $${els.cockpitUsedHigh.value}`,
+            `Condition score: ${els.cockpitCondition.value}/10`,
+            `Storage burden: ${els.cockpitStorage.value}`,
+            "Return: item identification, risks/missing parts, local demand, suggested max pay, opening offer, best asking price, lowest acceptable sale price, quick-sale price, expected profit, ROI, confidence, and Buy/Pass/Maybe recommendation. Exclude personal/unload items from flip-profit metrics."
+        ].join("\n");
+    }
+
+    function handleCockpitFile() {
+        const file = els.cockpitFile.files && els.cockpitFile.files[0];
+        if (!file) return;
+        els.cockpitFileLabel.textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB`;
+        if (file.type.startsWith("image/")) {
+            els.cockpitPreview.src = URL.createObjectURL(file);
+            els.cockpitPreview.hidden = false;
+        } else {
+            els.cockpitPreview.hidden = true;
+            els.cockpitFileLabel.textContent += " · PDF ready for future extraction";
+        }
+    }
+
     function escapeHtml(value) {
         return String(value)
             .replaceAll("&", "&amp;")
@@ -536,6 +677,32 @@
             state.selectedId = Number(button.dataset.id);
             render();
         });
+        [
+            els.cockpitItemName,
+            els.cockpitCategory,
+            els.cockpitSellerAsk,
+            els.cockpitRetail,
+            els.cockpitUsedLow,
+            els.cockpitUsedMedian,
+            els.cockpitUsedHigh,
+            els.cockpitCondition,
+            els.cockpitStorage
+        ].filter(Boolean).forEach((el) => {
+            el.addEventListener("input", analyzeCockpitCandidate);
+            el.addEventListener("change", analyzeCockpitCandidate);
+        });
+        els.useSelectedRecord?.addEventListener("click", loadSelectedRecordIntoCockpit);
+        els.cockpitFile?.addEventListener("change", handleCockpitFile);
+        els.copyCockpitPrompt?.addEventListener("click", async () => {
+            const text = cockpitPrompt();
+            try {
+                await navigator.clipboard.writeText(text);
+                els.copyCockpitPrompt.textContent = "Prompt Copied";
+                setTimeout(() => { els.copyCockpitPrompt.textContent = "Copy AI Prompt"; }, 1400);
+            } catch (_e) {
+                window.prompt("Copy this AI prompt", text);
+            }
+        });
     }
 
     try {
@@ -550,4 +717,5 @@
     buildFilters();
     bindEvents();
     applyFilters();
+    analyzeCockpitCandidate();
 })();

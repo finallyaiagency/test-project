@@ -144,6 +144,211 @@ h2 {
     line-height: 1;
 }
 
+.private-cockpit {
+    margin: 20px 0 18px;
+    display: grid;
+    gap: 14px;
+}
+
+.cockpit-hero-card,
+.cockpit-card,
+.cleanup-card {
+    border: 1px solid var(--line);
+    background: rgba(16, 20, 17, 0.78);
+}
+
+.cockpit-hero-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px;
+    background:
+        linear-gradient(90deg, rgba(66, 245, 167, 0.11), transparent 46%),
+        rgba(16, 20, 17, 0.84);
+}
+
+.eyebrow,
+.card-heading span,
+.input-grid span,
+.result-grid span,
+.result-meta span {
+    display: block;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.cockpit-hero-card p,
+.helper-copy,
+.cleanup-card p {
+    margin: 9px 0 0;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.privacy-pill {
+    flex: 0 0 auto;
+    border: 1px solid rgba(85, 214, 255, 0.4);
+    color: var(--cyan);
+    padding: 8px 11px;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.cockpit-tool-grid {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.8fr) minmax(320px, 1.25fr) minmax(260px, 0.9fr);
+    gap: 14px;
+    align-items: stretch;
+}
+
+.cockpit-card {
+    padding: 14px;
+}
+
+.card-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.card-heading strong {
+    color: var(--ink);
+    font-size: 1rem;
+    font-weight: 900;
+    text-align: right;
+}
+
+.upload-drop {
+    min-height: 218px;
+    display: grid;
+    place-items: center;
+    gap: 10px;
+    border: 1px dashed rgba(66, 245, 167, 0.52);
+    background: rgba(66, 245, 167, 0.05);
+    color: var(--hud);
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.upload-drop input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#cockpit-preview {
+    max-width: 100%;
+    max-height: 190px;
+    object-fit: contain;
+    border: 1px solid rgba(244, 240, 223, 0.18);
+}
+
+.input-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.input-grid input,
+.input-grid select {
+    width: 100%;
+    height: 38px;
+    margin-top: 6px;
+    border: 1px solid rgba(244, 240, 223, 0.2);
+    background: rgba(9, 13, 11, 0.84);
+    color: var(--ink);
+    padding: 0 9px;
+}
+
+.cockpit-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.cockpit-actions .reset-btn,
+.cockpit-actions .nav-btn {
+    flex: 1 1 160px;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.result-grid div {
+    border: 1px solid rgba(244, 240, 223, 0.14);
+    background: rgba(244, 240, 223, 0.035);
+    padding: 10px;
+}
+
+.result-grid strong {
+    display: block;
+    margin-top: 5px;
+    color: var(--hud);
+    font-size: 1.18rem;
+}
+
+.result-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.result-meta span {
+    border: 1px solid rgba(85, 214, 255, 0.28);
+    color: var(--cyan);
+    padding: 6px 8px;
+}
+
+.risk-list {
+    margin: 12px 0 0;
+    padding-left: 18px;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.cleanup-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.cleanup-card {
+    min-height: 150px;
+    padding: 12px;
+}
+
+.cleanup-card > span {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255, 184, 74, 0.55);
+    color: var(--amber);
+    font-weight: 900;
+}
+
+.cleanup-card strong {
+    display: block;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
 .control-deck {
     margin: 18px 0;
     display: grid;
@@ -768,8 +973,18 @@ details[open] summary::after {
 
 @media (max-width: 1100px) {
     .mission-bar,
-    .review-grid {
+    .review-grid,
+    .cockpit-tool-grid {
         grid-template-columns: 1fr;
+    }
+
+    .cleanup-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cockpit-hero-card {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
     .record-rail {
@@ -800,7 +1015,10 @@ details[open] summary::after {
     .hud-strip,
     .quick-read,
     .field-grid,
-    .control-deck {
+    .control-deck,
+    .input-grid,
+    .result-grid,
+    .cleanup-grid {
         grid-template-columns: 1fr;
     }
 

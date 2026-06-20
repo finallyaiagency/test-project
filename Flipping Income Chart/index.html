@@ -67,6 +67,10 @@
                     <article class="kpi kpi-info" title="Marketplace ad count reported in the KPI export sheet."><span>Marketplace Ads</span><strong id="marketplace-ads">0</strong></article>
                     <article class="kpi kpi-danger" title="The difference between marketplace ads and tracked sheet inventory. If this is positive, ads exceed tracked rows."><span>Ad / Sheet Gap</span><strong id="ad-gap">0</strong></article>
                     <article class="kpi kpi-slate" title="Duplicate display of sold units for compact comparison on smaller screens."><span>Sold Count</span><strong id="sold-count-secondary">0</strong></article>
+                    <article class="kpi kpi-primary" title="Average paid price as a share of seller asking across sold items."><span>Average Paid % of Seller Asking</span><strong id="avg-paid-percent-seller-asking">0%</strong></article>
+                    <article class="kpi kpi-cyan" title="Average savings versus seller asking across sold items."><span>Average Savings vs Seller Asking</span><strong id="avg-savings-vs-seller-asking">0%</strong></article>
+                    <article class="kpi kpi-go" title="Average paid price as a share of seller asking across active inventory."><span>Active Avg Paid % of Seller Asking</span><strong id="active-avg-paid-percent-seller-asking">0%</strong></article>
+                    <article class="kpi kpi-amber" title="Average savings versus seller asking across active inventory."><span>Active Avg Savings vs Seller Asking</span><strong id="active-avg-savings-vs-seller-asking">0%</strong></article>
                 </div>
             </details>
         </section>
@@ -119,10 +123,10 @@
                 <div class="panel-heading">
                     <div>
                         <span class="eyebrow">Category mix</span>
-                        <h2>Profit by type</h2>
+                        <h2>Profit per day by type</h2>
                     </div>
                 </div>
-                <div id="type-bars" class="bar-list"></div>
+                <div id="type-bars" class="plotly-chart" style="min-height: 340px;"></div>
             </article>
 
             <article class="panel">
