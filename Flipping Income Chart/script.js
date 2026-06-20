@@ -59,7 +59,7 @@
         ["total", "Total Cost Basis + Cash", null, true],
         ["inventoryMA", "Inventory Cost Basis 30D MA", null, false],
         ["cashMA", "Cash on Hand 30D MA", null, false],
-        ["totalMA", "Total 30D MA", null, true],
+        ["totalMA", "Total 30D MA", null, false],
         ["avgInventoryValue", "Avg Cost Basis per Item", "y2", false],
         ["avgMA", "Avg Cost Basis 30D MA", "y2", false],
         ["activity", "Buy / Sell Activity", null, false],

@@ -1006,6 +1006,11 @@ details[open] summary::after {
 }
 
 @media (max-width: 720px) {
+    .top-header {
+        position: static;
+        backdrop-filter: none;
+    }
+
     .header-nav {
         justify-content: center;
         gap: 12px;
