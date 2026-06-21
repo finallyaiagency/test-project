@@ -62,6 +62,7 @@
         ["totalMA", "Total 30D MA", null, false],
         ["avgInventoryValue", "Avg Cost Basis per Item", "y2", false],
         ["avgMA", "Avg Cost Basis 30D MA", "y2", false],
+        ["monthlyProfitPerInventory", "30D Profit / Avg Inventory", "y3", false, "percent"],
         ["activity", "Buy / Sell Activity", null, false],
     ];
 
@@ -378,7 +379,7 @@
         const soldRows = filteredSoldRows(scopedItems);
         const inventoryRows = scopedItems.filter((row) => toNumber(row[COLS.inventory]) === 1);
 
-        renderKpis(soldRows, inventoryRows);
+        renderKpis(soldRows, inventoryRows, daily);
         renderPlotly(daily);
         renderTypeBars(soldRows);
         renderInventory(inventoryRows);
@@ -397,10 +398,11 @@
             const item = row[COLS.item] || "Untitled item";
 
             if (buyDate) {
-                allEvents.push({ date: buyDate, item, type: "Buy", amount: paid, inventoryDelta: paid, cashDelta: -paid, countDelta: 1 });
+                allEvents.push({ date: buyDate, item, type: "Buy", amount: paid, inventoryDelta: paid, cashDelta: -paid, countDelta: 1, profit: 0 });
             }
             if (soldDate) {
-                allEvents.push({ date: soldDate, item, type: "Sell", amount: salePrice, inventoryDelta: -paid, cashDelta: salePrice, countDelta: -1 });
+                const realizedProfit = toNumber(row[COLS.profit]) || (salePrice - paid);
+                allEvents.push({ date: soldDate, item, type: "Sell", amount: salePrice, inventoryDelta: -paid, cashDelta: salePrice, countDelta: -1, profit: realizedProfit });
             }
         });
         return allEvents;
@@ -416,10 +418,11 @@
 
         sourceEvents.forEach((event) => {
             const key = dateKey(event.date);
-            const bucket = byDate.get(key) || { inventoryDelta: 0, cashDelta: 0, countDelta: 0, activity: [] };
+            const bucket = byDate.get(key) || { inventoryDelta: 0, cashDelta: 0, countDelta: 0, profit: 0, activity: [] };
             bucket.inventoryDelta += event.inventoryDelta;
             bucket.cashDelta += event.cashDelta;
             bucket.countDelta += event.countDelta;
+            bucket.profit += event.profit;
             bucket.activity.push(`${event.type}: ${event.item} (${money.format(event.amount)})`);
             byDate.set(key, bucket);
         });
@@ -429,7 +432,7 @@
         let cashOnHand = 0;
         let inventoryCount = 0;
         for (let date = start; date <= end; date = addDays(date, 1)) {
-            const bucket = byDate.get(dateKey(date)) || { inventoryDelta: 0, cashDelta: 0, countDelta: 0, activity: [] };
+            const bucket = byDate.get(dateKey(date)) || { inventoryDelta: 0, cashDelta: 0, countDelta: 0, profit: 0, activity: [] };
             inventoryValue += bucket.inventoryDelta;
             cashOnHand += bucket.cashDelta;
             inventoryCount += bucket.countDelta;
@@ -440,6 +443,7 @@
                 inventoryCount,
                 total: inventoryValue + cashOnHand,
                 avgInventoryValue: inventoryCount > 0 ? inventoryValue / inventoryCount : null,
+                realizedProfit: bucket.profit,
                 activity: bucket.activity.join("<br>"),
             });
         }
@@ -448,10 +452,15 @@
         const cashMA = rollingMean(output.map((row) => row.cashOnHand), 30);
         const totalMA = rollingMean(output.map((row) => row.total), 30);
         const avgMA = rollingMean(output.map((row) => row.avgInventoryValue), 30);
-        return output.map((row, index) => ({ ...row, inventoryMA: inventoryMA[index], cashMA: cashMA[index], totalMA: totalMA[index], avgMA: avgMA[index] }));
+        const profit30 = rollingSum(output.map((row) => row.realizedProfit), 30);
+        const avgInventory30 = rollingMean(output.map((row) => row.inventoryValue), 30);
+        return output.map((row, index) => {
+            const monthlyProfitPerInventory = avgInventory30[index] > 0 ? profit30[index] / avgInventory30[index] : null;
+            return { ...row, inventoryMA: inventoryMA[index], cashMA: cashMA[index], totalMA: totalMA[index], avgMA: avgMA[index], profit30: profit30[index], avgInventory30: avgInventory30[index], monthlyProfitPerInventory };
+        });
     }
 
-    function renderKpis(soldRows, inventoryRows) {
+    function renderKpis(soldRows, inventoryRows, daily) {
         const useSheetKpis = allYearsSelected() && allCategoriesSelected() && kpiMetrics.size > 0;
         const computedRevenue = sum(soldRows, COLS.soldPrice);
         const computedProfit = sum(soldRows, COLS.profit);
@@ -489,9 +498,11 @@
         const avgSavingsVsSellerAsking = 1 - avgPaidVsSellerAsking;
         const activeAvgPaidVsSellerAsking = averageRatio(inventoryRows, COLS.buyPrice, COLS.asking);
         const activeAvgSavingsVsSellerAsking = 1 - activeAvgPaidVsSellerAsking;
+        const latestMonthlyProfitPerInventory = latestFinite(daily.map((row) => row.monthlyProfitPerInventory));
 
         setText("total-profit", money.format(totalProfit));
         setText("gross-margin", formatRatio(grossMargin));
+        setText("monthly-profit-inventory", latestMonthlyProfitPerInventory == null ? "n/a" : formatRatio(latestMonthlyProfitPerInventory));
         setText("sales-revenue", money.format(salesRevenue));
         setText("sold-count", number.format(soldUnits));
         setText("sold-count-secondary", number.format(soldUnits));
@@ -701,14 +712,14 @@
         }
         const data = TRACE_DEFS
             .filter(([key]) => traceState.get(key))
-            .map(([key, label, axis]) => key === "activity" ? activityTrace(source) : lineTrace(source, key, label, axis));
+            .map(([key, label, axis, , format]) => key === "activity" ? activityTrace(source) : lineTrace(source, key, label, axis, format));
 
         Plotly.react("income-chart", data, {
-            title: { text: "Groundbnb Inventory Cost Basis, Cash, Realized Equity, and Avg Item Cost" },
+            title: { text: "Groundbnb Inventory Cost Basis, Cash, Realized Equity, Avg Item Cost, and Monthly Yield" },
             paper_bgcolor: "rgba(0,0,0,0)",
             plot_bgcolor: "rgba(0,0,0,0)",
             font: { family: "Outfit, sans-serif", color: "#f4f0df" },
-            colorway: ["#42f5a7", "#55d6ff", "#ffb84a", "#2acb84", "#3aa5ff", "#f5d06a", "#ff6f91", "#cbbcff", "#ffffff"],
+            colorway: ["#42f5a7", "#55d6ff", "#ffb84a", "#2acb84", "#3aa5ff", "#f5d06a", "#ff6f91", "#cbbcff", "#b8ff4a", "#ffffff"],
             xaxis: { title: "Date", gridcolor: "rgba(244,240,223,0.10)", zerolinecolor: "rgba(244,240,223,0.18)" },
             yaxis: {
                 title: "Inventory Cost / Cash / Equity ($)",
@@ -725,6 +736,15 @@
                 side: "right",
                 gridcolor: "rgba(244,240,223,0)",
             },
+            yaxis3: {
+                title: "30D Profit / Avg Inventory (%/mo)",
+                tickformat: ".0%",
+                overlaying: "y",
+                side: "right",
+                anchor: "free",
+                position: 1,
+                gridcolor: "rgba(244,240,223,0)",
+            },
             hovermode: "x",
             hoverlabel: { bgcolor: "#101411", bordercolor: "rgba(66,245,167,0.55)", font: { color: "#f4f0df" } },
             legend: { orientation: "h", yanchor: "bottom", y: 1.02, xanchor: "left", x: 0 },
@@ -732,7 +752,8 @@
         }, { responsive: true, displaylogo: false });
     }
 
-    function lineTrace(source, key, label, axis) {
+    function lineTrace(source, key, label, axis, format) {
+        const hoverValue = format === "percent" ? "%{y:.1%}" : "$%{y:,.2f}";
         return {
             x: source.map((row) => row.date),
             y: source.map((row) => row[key]),
@@ -740,7 +761,7 @@
             name: label,
             yaxis: axis,
             line: { width: key.endsWith("MA") ? 2 : 3 },
-            hovertemplate: `<b>%{x|%Y-%m-%d}</b><br>${label}: $%{y:,.2f}<extra></extra>`,
+            hovertemplate: `<b>%{x|%Y-%m-%d}</b><br>${label}: ${hoverValue}<extra></extra>`,
         };
     }
 
@@ -990,6 +1011,20 @@
 
     function rollingMean(values, windowSize) {
         return values.map((_, index) => mean(values.slice(Math.max(0, index - windowSize + 1), index + 1)));
+    }
+
+    function rollingSum(values, windowSize) {
+        return values.map((_, index) => values
+            .slice(Math.max(0, index - windowSize + 1), index + 1)
+            .filter((value) => Number.isFinite(value))
+            .reduce((total, value) => total + value, 0));
+    }
+
+    function latestFinite(values) {
+        for (let index = values.length - 1; index >= 0; index -= 1) {
+            if (Number.isFinite(values[index])) return values[index];
+        }
+        return null;
     }
 
     function sum(records, key) {
