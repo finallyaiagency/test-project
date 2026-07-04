@@ -54,16 +54,16 @@
         "Status",
     ];
     const TRACE_DEFS = [
-        ["inventoryValue", "Inventory Cost Basis", null, true],
-        ["cashOnHand", "Cash on Hand", null, true],
-        ["total", "Total Cost Basis + Cash", null, true],
-        ["inventoryMA", "Inventory Cost Basis 30D MA", null, false],
-        ["cashMA", "Cash on Hand 30D MA", null, false],
-        ["totalMA", "Total 30D MA", null, false],
-        ["avgInventoryValue", "Avg Cost Basis per Item", "y2", false],
-        ["avgMA", "Avg Cost Basis 30D MA", "y2", false],
-        ["monthlyProfitPerInventory", "30D Profit / Avg Inventory", "y3", false, "percent"],
-        ["activity", "Buy / Sell Activity", null, false],
+        ["inventoryValue", "Inventory Cost Basis", null, true, "money", "Daily cash tied up in active inventory at cost basis. Shows how much buying capital is sitting on the shelf."],
+        ["cashOnHand", "Cash on Hand", null, true, "money", "Running cash balance from closed flips after purchases and sales. Useful for seeing liquidity over time."],
+        ["total", "Total Cost Basis + Cash", null, true, "money", "Cash on hand plus active inventory cost basis. A simple realized-equity view of the flipping operation."],
+        ["inventoryMA", "Inventory Cost Basis 30D MA", null, false, "money", "30-day moving average of inventory cost basis. Smooths daily purchase and sale spikes."],
+        ["cashMA", "Cash on Hand 30D MA", null, false, "money", "30-day moving average of cash on hand. Smooths one-off sale and buy swings."],
+        ["totalMA", "Total 30D MA", null, false, "money", "30-day moving average of total cost basis plus cash. Use it to see the longer-term trend."],
+        ["avgInventoryValue", "Avg Cost Basis per Item", "y2", false, "money", "Average cost basis per active item. Helps spot whether inventory is shifting toward higher-ticket or lower-ticket flips."],
+        ["avgMA", "Avg Cost Basis 30D MA", "y2", false, "money", "30-day moving average of average active item cost. Smooths changes in inventory mix."],
+        ["monthlyProfitPerInventory", "30D Profit / Avg Inventory", "y3", false, "percent", "Gross profit from the last 30 days divided by average inventory cost basis. Shows monthly yield on deployed inventory."],
+        ["activity", "Buy / Sell Activity", null, false, "activity", "Diamond markers for buy and sell events. Hover a marker to see what changed on that date."],
     ];
 
     const yearFilterWrap = document.getElementById("year-filter-wrap");
@@ -283,10 +283,11 @@
             if (!categories.includes(type)) categoryState.delete(type);
         });
         renderCategoryFilter(categories);
-        traceControls.innerHTML = TRACE_DEFS.map(([key, label]) => `
-            <label class="trace-toggle">
+        traceControls.innerHTML = TRACE_DEFS.map(([key, label, , , , description]) => `
+            <label class="trace-toggle" title="${escapeAttr(description)}" data-tooltip="${escapeAttr(description)}" aria-label="${escapeAttr(`${label}: ${description}`)}">
                 <input type="checkbox" value="${key}" ${traceState.get(key) ? "checked" : ""}>
                 <span>${escapeHtml(label)}</span>
+                <span class="trace-tooltip" aria-hidden="true">?</span>
             </label>
         `).join("");
         renderYearFilter(years);

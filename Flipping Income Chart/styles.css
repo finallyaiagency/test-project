@@ -425,6 +425,7 @@ select:focus {
 }
 
 .trace-toggle {
+    position: relative;
     min-height: 36px;
     display: inline-flex;
     align-items: center;
@@ -438,6 +439,49 @@ select:focus {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     cursor: pointer;
+}
+
+.trace-toggle::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    z-index: 40;
+    width: min(280px, 82vw);
+    padding: 10px 12px;
+    border: 1px solid rgba(66, 245, 167, 0.45);
+    background: rgba(9, 13, 11, 0.98);
+    color: var(--ink);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    white-space: normal;
+    transform: translate(-50%, 4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.trace-toggle:hover::after,
+.trace-toggle:focus-within::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.trace-tooltip {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(244, 240, 223, 0.28);
+    border-radius: 999px;
+    color: var(--cyan);
+    font-size: 0.68rem;
+    line-height: 1;
 }
 
 .trace-toggle input {
