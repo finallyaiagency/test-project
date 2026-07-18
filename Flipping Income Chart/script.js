@@ -4,7 +4,7 @@
     const INVENTORY_SHEET = "Inventory Register";
     const SALES_SHEET = "Sales Ledger";
     const KPI_SHEET = "KPI Export - Web Dashboard";
-    const CACHE_KEY = "flip-tracker:last-good-payload";
+    const CACHE_KEY = "flip-tracker:last-good-payload:v2";
 
     const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
     const number = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
@@ -208,6 +208,7 @@
             const acquiredDate = record["Acquired Date"] || sale["Acquired Date"] || "";
             const soldDate = sold ? sale["Sold Date"] || "" : "";
             const year = soldDate ? getYear(soldDate) : getYear(acquiredDate);
+            const daysToSellFromSheet = cleanNumberish(sale["Days to Sell"]);
             return [
                 assetId,
                 record.Category || sale.Category || "Other",
@@ -222,7 +223,7 @@
                 sold ? cleanNumberish(sale["Sale Price"]) : "",
                 sold ? cleanNumberish(sale.Markup) : "",
                 sold ? cleanNumberish(sale["Gross Profit"]) : "",
-                sold ? cleanNumberish(sale["Days to Sell"]) : "",
+                sold ? daysToSellFromSheet : "",
                 cleanNumberish(record["Days Held"]),
                 record["Listing URL"] || "",
                 record["Source"] || "",
@@ -897,7 +898,7 @@
                     <td>${money.format(toNumber(row[COLS.buyPrice]))}</td>
                     <td>${money.format(toNumber(row[COLS.soldPrice]))}</td>
                     <td class="${profit >= 0 ? "profit-positive" : "profit-negative"}">${money.format(profit)}</td>
-                    <td>${number.format(toNumber(row[COLS.daysToSell]))}</td>
+                    <td>${formatDaysToSell(row)}</td>
                 </tr>
             `;
         }).join("");
@@ -929,6 +930,12 @@
         if (!text || text === "#REF!") return "";
         const numeric = Number(text.replace(/[$,%]/g, "").replace(/,/g, ""));
         return Number.isFinite(numeric) ? numeric : value;
+    }
+
+    function formatDaysToSell(row) {
+        const rawValue = row?.[COLS.daysToSell];
+        if (rawValue == null || String(rawValue).trim() === "") return "—";
+        return number.format(toNumber(rawValue));
     }
 
     function toNumber(value) {
