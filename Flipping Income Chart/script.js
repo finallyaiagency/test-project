@@ -5,9 +5,12 @@
     const SALES_SHEET = "Sales Ledger";
     const KPI_SHEET = "KPI Export - Web Dashboard";
     const CACHE_KEY = "flip-tracker:last-good-payload:v2";
+    const ACTIVE_ASKING_EXCLUDED_ASSET_IDS = new Set(["GB-0173"]);
 
     const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+    const moneyTwoDecimals = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const number = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
+    const wholeNumber = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
     const COLS = {
         assetId: "Asset ID",
         item: "Description",
@@ -464,6 +467,7 @@
 
     function renderKpis(soldRows, inventoryRows, daily) {
         const useSheetKpis = allYearsSelected() && allCategoriesSelected() && kpiMetrics.size > 0;
+        const hasAdGapMetric = useSheetKpis && kpiMetrics.has("Ad vs Sheet Gap");
         const computedRevenue = sum(soldRows, COLS.soldPrice);
         const computedProfit = sum(soldRows, COLS.profit);
         const computedSoldUnits = soldRows.length;
@@ -473,8 +477,9 @@
         const soldUnits = metricValue("Sold Units", computedSoldUnits, useSheetKpis);
         const inventoryCount = metricValue("Tracked Active Inventory Units", computedActiveUnits, useSheetKpis);
         const inventoryCost = metricValue("Active Cost Basis", sum(inventoryRows, COLS.buyPrice), useSheetKpis);
-        const activeAsking = metricValue("Active Asking Value", sum(inventoryRows, COLS.asking), useSheetKpis);
-        const unrealizedProfit = metricValue("Unrealized Gross Profit", sumPotentialProfit(inventoryRows), useSheetKpis);
+        const activeAskingRows = inventoryRows.filter((row) => !ACTIVE_ASKING_EXCLUDED_ASSET_IDS.has(String(row[COLS.assetId]).trim()));
+        const activeAsking = sum(activeAskingRows, COLS.asking);
+        const unrealizedProfit = activeAsking - sum(activeAskingRows, COLS.buyPrice);
         const avgDays = metricValue("Average Days to Sell", average(soldRows, COLS.daysToSell), useSheetKpis);
         const medianDays = metricValue("Median Days to Sell", median(soldRows.map((row) => toNumber(row[COLS.daysToSell])).filter((value) => value > 0)), useSheetKpis);
         const agingRisk = metricValue("Aging Risk Units", inventoryRows.filter((row) => toNumber(row[COLS.daysHeld]) > 45).length, useSheetKpis);
@@ -483,6 +488,7 @@
         const paidBasis = sum(soldRows, COLS.buyPrice) || Math.max(0, salesRevenue - totalProfit);
         const grossMargin = salesRevenue ? totalProfit / salesRevenue : 0;
         const realizedRoi = paidBasis ? totalProfit / paidBasis : 0;
+        const medianProfit = median(soldRows.map((row) => toNumber(row[COLS.profit])));
         const sellThrough = soldUnits + inventoryCount ? soldUnits / (soldUnits + inventoryCount) : 0;
         const avgMarkup = averageMarkup(soldRows);
         const freeSoldRows = soldRows.filter((row) => toNumber(row[COLS.buyPrice]) <= 0);
@@ -494,12 +500,10 @@
             ? paidSoldProfit / Math.max(1, sum(paidSoldRows, COLS.daysToSell))
             : 0;
         const daysInInventory = average(inventoryRows, COLS.daysHeld);
+        const oneYearInventoryCount = inventoryRows.filter((row) => toNumber(row[COLS.daysHeld]) >= 365).length;
         const inventoryTurnover = inventoryCost ? salesRevenue / inventoryCost : 0;
         const zeroCostShare = soldUnits ? freeSoldUnits / soldUnits : 0;
-        const avgPaidVsSellerAsking = averageRatio(soldRows, COLS.buyPrice, COLS.asking);
-        const avgSavingsVsSellerAsking = 1 - avgPaidVsSellerAsking;
-        const activeAvgPaidVsSellerAsking = averageRatio(inventoryRows, COLS.buyPrice, COLS.asking);
-        const activeAvgSavingsVsSellerAsking = 1 - activeAvgPaidVsSellerAsking;
+        const avgPaidVsSellerAsking = averageRatio([...soldRows, ...inventoryRows], COLS.buyPrice, COLS.asking);
         const latestMonthlyProfitPerInventory = latestFinite(daily.map((row) => row.monthlyProfitPerInventory));
 
         setText("total-profit", money.format(totalProfit));
@@ -507,30 +511,29 @@
         setText("monthly-profit-inventory", latestMonthlyProfitPerInventory == null ? "n/a" : formatRatio(latestMonthlyProfitPerInventory));
         setText("sales-revenue", money.format(salesRevenue));
         setText("sold-count", number.format(soldUnits));
-        setText("sold-count-secondary", number.format(soldUnits));
+
         setText("avg-days", number.format(avgDays));
         setText("inventory-cost", money.format(inventoryCost));
         setText("inventory-count", number.format(inventoryCount));
         setText("realized-roi", formatRatio(realizedRoi));
         setText("avg-profit", money.format(soldUnits ? totalProfit / soldUnits : 0));
+        setText("median-profit", money.format(medianProfit));
         setText("median-days", number.format(medianDays));
         setText("active-asking", money.format(activeAsking));
         setText("unrealized-profit", money.format(unrealizedProfit));
         setText("aging-risk", number.format(agingRisk));
         setText("annualized-return", formatRatio(annualizedReturn));
-        setText("profit-per-day", money.format(profitPerDay));
-        setText("days-in-inventory", number.format(daysInInventory));
+        setText("profit-per-day", moneyTwoDecimals.format(profitPerDay));
+        setText("days-in-inventory", formatInventoryAge(daysInInventory));
+        setText("inventory-one-year", number.format(oneYearInventoryCount));
         setText("inventory-turnover", `${number.format(inventoryTurnover)}x`);
         setText("free-items", number.format(freeSoldUnits));
         setText("free-items-share", formatRatio(zeroCostShare));
         setText("sell-through", formatRatio(sellThrough));
-        setText("avg-markup", formatRatio(avgMarkup));
+        setText("avg-markup", formatWholeRatio(avgMarkup));
         setText("marketplace-ads", marketplaceAds ? number.format(marketplaceAds) : "n/a");
-        setText("ad-gap", adGap ? number.format(adGap) : "n/a");
+        setText("ad-gap", hasAdGapMetric ? number.format(adGap) : "n/a");
         setText("avg-paid-percent-seller-asking", formatRatio(avgPaidVsSellerAsking));
-        setText("avg-savings-vs-seller-asking", formatRatio(avgSavingsVsSellerAsking));
-        setText("active-avg-paid-percent-seller-asking", formatRatio(activeAvgPaidVsSellerAsking));
-        setText("active-avg-savings-vs-seller-asking", formatRatio(activeAvgSavingsVsSellerAsking));
     }
 
     function renderCategoryFilter(categories) {
@@ -1005,6 +1008,15 @@
         return `${number.format((Number.isFinite(value) ? value : 0) * 100)}%`;
     }
 
+    function formatWholeRatio(value) {
+        return `${wholeNumber.format((Number.isFinite(value) ? value : 0) * 100)}%`;
+    }
+
+    function formatInventoryAge(days) {
+        if (days > 60) return `${number.format(days / 30.44)} months`;
+        return `${number.format(days)} days`;
+    }
+
     function mean(values) {
         const valid = values.filter((value) => Number.isFinite(value));
         return valid.length ? valid.reduce((total, value) => total + value, 0) / valid.length : null;
@@ -1065,14 +1077,6 @@
             return toNumber(value) / 100;
         }
         return toNumber(value);
-    }
-
-    function sumPotentialProfit(records) {
-        return records.reduce((total, row) => {
-            const explicit = toNumber(row["Potential Gross Profit"]);
-            if (explicit) return total + explicit;
-            return total + Math.max(0, toNumber(row[COLS.asking]) - toNumber(row[COLS.buyPrice]));
-        }, 0);
     }
 
     function annualizedReturnOnCapital(records) {

@@ -55,7 +55,7 @@ class MobileYearFilterLayoutTest(unittest.TestCase):
     def test_mobile_layout_and_chart_code_use_fresh_cache_busters(self) -> None:
         html = HTML_PATH.read_text(encoding="utf-8")
         self.assertIn('href="styles.css?v=20260723-2"', html)
-        self.assertIn('src="script.js?v=20260723-2"', html)
+        self.assertIn('src="script.js?v=20260723-4"', html)
 
 
 if __name__ == "__main__":
