@@ -717,7 +717,7 @@
             .map(([key, label, axis, , format]) => key === "activity" ? activityTrace(source) : lineTrace(source, key, label, axis, format));
 
         Plotly.react("income-chart", data, {
-            title: { text: "Groundbnb Inventory Cost Basis, Cash, Realized Equity, Avg Item Cost, and Monthly Yield" },
+            title: { text: "Groundbnb Inventory, Cash, Equity & Yield", x: 0, xanchor: "left", y: 0.98, yanchor: "top" },
             paper_bgcolor: "rgba(0,0,0,0)",
             plot_bgcolor: "rgba(0,0,0,0)",
             font: { family: "Outfit, sans-serif", color: "#f4f0df" },
@@ -750,7 +750,7 @@
             hovermode: "x",
             hoverlabel: { bgcolor: "#101411", bordercolor: "rgba(66,245,167,0.55)", font: { color: "#f4f0df" } },
             legend: { orientation: "h", yanchor: "bottom", y: 1.02, xanchor: "left", x: 0 },
-            margin: { l: 72, r: 82, t: 92, b: 58 },
+            margin: { l: 72, r: 82, t: 150, b: 58 },
         }, { responsive: true, displaylogo: false });
     }
 
@@ -830,7 +830,7 @@
             font: { family: "Outfit, sans-serif", color: "#f4f0df" },
             margin: { l: 120, r: 24, t: 56, b: 40 },
             xaxis: { title: "Profit per day ($)", gridcolor: "rgba(244,240,223,0.10)", zerolinecolor: "rgba(244,240,223,0.18)" },
-            yaxis: { automargin: true, gridcolor: "rgba(244,240,223,0.06)" },
+            yaxis: { automargin: true, categoryorder: "array", categoryarray: sorted.map((row) => row.type), autorange: "reversed", gridcolor: "rgba(244,240,223,0.06)" },
             showlegend: false,
         }, { responsive: true, displaylogo: false });
     }

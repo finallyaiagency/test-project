@@ -717,6 +717,26 @@ td:nth-child(6) {
         flex: 0 0 auto;
     }
 
+    #category-filter-wrap {
+        min-width: 150px;
+        flex: 0 1 150px;
+    }
+
+    #category-filter-panel {
+        left: 0;
+        right: auto;
+        width: min(160px, calc(100vw - 20px));
+    }
+
+    #category-filter-panel .multi-filter-actions {
+        flex-direction: column;
+    }
+
+    #category-filter-panel .multi-filter-actions button {
+        width: 100%;
+        flex: 0 0 auto;
+    }
+
     select {
         width: 100%;
     }
